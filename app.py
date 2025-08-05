@@ -18,13 +18,19 @@ def build_prompt(user_query):
         - Suggest items that make sense for the occasion and are typically bought online.
         - Only include **one specific item per search step**
     3. For shopping queries, extract item name, quantity as search query and filters like brand, price, rating, etc.
-    4. For cooking/recipe queries:
-       - Suggest a list of top 5 **essential, non-perishable, e-commerce-friendly ingredients** needed for the recipe — in order of relevance.
-       - DO NOT include fresh/perishable items like vegetables (onions, tomatoes), raw meats (chicken, fish), or dairy (milk, paneer) if they are typically not sold online.
-       - DO include packaged spices, sauces, oils, canned goods, frozen items (if typically sold online), etc.
-       - Think like an online grocery expert — suggest only things that are commonly available on e-commerce platforms in the region.
+    4. For **cooking/recipe** queries:
+       - Identify the **top 5 essential ingredients or products** required for the recipe that a user can buy online.
+       - Only suggest **non-perishable, e-commerce-friendly** items — i.e., things that are commonly sold online such as:
+         - packaged spices (e.g., garam masala, turmeric, red chili powder)
+         - cooking oils and ghee
+         - ginger garlic paste
+         - cooking cream, sauces, canned or frozen items (if relevant)
+         - rice or packaged mixes (e.g., biryani mix, gravy base)
+       - **Avoid** suggesting perishable items like fresh vegetables, milk, raw chicken, etc.
+       - Think like an online grocery expert. Suggest items a user would likely need but may not already have at home.
+       - Only 1 item per search step.
        - Do not give cooking instructions. Only extract shoppable items.
-       - Only include **one specific item per search step**.
+
     5. Output your answer in this format:
     
     intent: planning/shopping  
