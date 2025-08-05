@@ -128,10 +128,13 @@ def fetch_top_products(query, country_code="AE", limit=1, sort_by="popularity", 
 
     response = session.send(prepared)
 
+    st.write(f"🔗 URL: {response.url}")
+    st.write(f"Status Code: {response.status_code}")
+
     if response.status_code != 200:
-        print(f"❌ Error: Status code {response.status_code}")
-        print(response.text)
-        return pd.DataFrame()
+            st.error(f"❌ Failed to fetch products. Status code: {response.status_code}")
+            st.text(response.text)
+            return pd.DataFrame()
 
     try:
         data = response.json()
@@ -157,7 +160,7 @@ def fetch_top_products(query, country_code="AE", limit=1, sort_by="popularity", 
         return pd.DataFrame(results)
 
     except Exception as e:
-        print("❌ JSON parse error:", e)
+        st.exception(f"❌ Exception while fetching products for query: {query}\n{e}")
         return pd.DataFrame()
 
 
