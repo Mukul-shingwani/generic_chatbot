@@ -67,7 +67,7 @@ def build_prompt(user_query):
 def get_search_plan(user_query):
     prompt = build_prompt(user_query)
     response = client.chat.completions.create(
-        model="gpt-4.1-mini",
+        model="gpt-4.1",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
     )
