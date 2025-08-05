@@ -66,8 +66,7 @@ def get_search_plan(user_query):
 
 
 def extract_queries(llm_text):
-    # Extract lines that look like: - {q: "some query"}
-    pattern = r'-\s*\{q:\s*"(.*?)"\}'
+    pattern = r'q:\s*"(.*?)"'
     return re.findall(pattern, llm_text)
 
 
