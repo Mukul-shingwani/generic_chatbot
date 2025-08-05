@@ -123,7 +123,7 @@ def fetch_top_products(query, country_code="AE", limit=2, sort_by="popularity", 
     try:
         response = requests.get(url, params=params, headers=headers)
 
-        st.write(f"🔗 URL: {response.url}")
+        # st.write(f"🔗 URL: {response.url}")
         # st.write(f"Status Code: {response.status_code}")
 
         if response.status_code != 200:
