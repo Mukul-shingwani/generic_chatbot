@@ -58,7 +58,7 @@ def build_prompt(user_query):
 def get_search_plan(user_query):
     prompt = build_prompt(user_query)
     response = client.chat.completions.create(
-        model="gpt-4.1",
+        model="gpt-4.1-mini",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.0,
     )
@@ -89,7 +89,7 @@ def show_product_carousel(df):
     return html  # Return string, not IPython HTML
 
 
-def fetch_top_products(query, country_code="AE", limit=1, sort_by="popularity", sort_dir="desc"):
+def fetch_top_products(query, country_code="AE", limit=2, sort_by="popularity", sort_dir="desc"):
     url = "https://api-app.noon.com/_svc/catalog/api/v3/search"
 
     params = {
