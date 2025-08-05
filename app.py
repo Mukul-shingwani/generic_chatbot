@@ -124,8 +124,8 @@ def fetch_top_products(query, country_code="AE", limit=1, sort_by="popularity", 
     try:
         response = requests.get(url, params=params, headers=headers)
 
-        st.write(f"🔗 URL: {response.url}")
-        st.write(f"Status Code: {response.status_code}")
+        # st.write(f"🔗 URL: {response.url}")
+        # st.write(f"Status Code: {response.status_code}")
 
         if response.status_code != 200:
             st.error(f"❌ Failed to fetch products. Status code: {response.status_code}")
@@ -174,7 +174,7 @@ def fetch_top_products(query, country_code="AE", limit=1, sort_by="popularity", 
 
 st.set_page_config(page_title="Noon Smart Shopping Assistant", layout="wide")
 
-st.title("🛍️ Noon Smart Shopping Assistant")
+st.title("🛍️ noon Assistant")
 st.markdown("Enter your query — whether it's a **plan**, a **buying task**, or **recipe support**, and we’ll fetch the top picks!")
 
 user_query = st.text_input("💬 What do you need help with?", placeholder="e.g., Help me plan a beach picnic", key="user_query")
@@ -190,18 +190,18 @@ if st.button("Generate Search Plan & Show Products") and user_query:
     results = []
     
     for i, q in enumerate(queries):
-        st.markdown(f"### 🔍 Step {i+1}: Searching for `{q}`")
+        # st.markdown(f"### 🔍 Step {i+1}: Searching for `{q}`")
         df_item = fetch_top_products(query=q)
         
         if df_item.empty:
             st.warning(f"No results found for: `{q}`")
         else:
-            st.success(f"✅ Found {len(df_item)} items for: `{q}`")
-            st.dataframe(df_item)  # Debug: show intermediate result
+            # st.success(f"✅ Found {len(df_item)} items for: `{q}`")
+            # st.dataframe(df_item)  # Debug: show intermediate result
             results.append(df_item)
 
     if results:
-        df = pd.concat(all_results, ignore_index=True)
+        df = pd.concat(results, ignore_index=True)
         st.markdown("#### 🛒 Top Product Recommendations")
         st.components.v1.html(show_product_carousel(df).data, height=400, scrolling=True)
     else:
