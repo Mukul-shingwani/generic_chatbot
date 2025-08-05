@@ -86,7 +86,7 @@ def show_product_carousel(df):
         </div>
         '''
     html += '</div>'
-    st.markdown(html, unsafe_allow_html=True)
+    return html  # Return string, not IPython HTML
 
 
 def fetch_top_products(query, country_code="AE", limit=1, sort_by="popularity", sort_dir="desc"):
@@ -203,6 +203,6 @@ if st.button("Generate Search Plan & Show Products") and user_query:
     if results:
         df = pd.concat(results, ignore_index=True)
         st.markdown("#### 🛒 Top Product Recommendations")
-        st.components.v1.html(show_product_carousel(df).data, height=400, scrolling=True)
+        st.components.v1.html(show_product_carousel(df), height=400, scrolling=True)
     else:
         st.warning("No products found. Try refining your query.")
