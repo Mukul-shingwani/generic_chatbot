@@ -175,13 +175,21 @@ if st.button("Generate Search Plan & Show Products") and user_query:
         st.markdown("#### ✨ Detected Search Steps")
         st.code(result, language="yaml")
 
-    all_results = []
-    for q in queries:
+    queries = extract_queries(result)
+    results = []
+    
+    for i, q in enumerate(queries):
+        st.markdown(f"### 🔍 Step {i+1}: Searching for `{q}`")
         df_item = fetch_top_products(query=q)
-        if not df_item.empty:
-            all_results.append(df_item)
+        
+        if df_item.empty:
+            st.warning(f"No results found for: `{q}`")
+        else:
+            st.success(f"✅ Found {len(df_item)} items for: `{q}`")
+            st.dataframe(df_item)  # Debug: show intermediate result
+            results.append(df_item)
 
-    if all_results:
+    if results:
         df = pd.concat(all_results, ignore_index=True)
         st.markdown("#### 🛒 Top Product Recommendations")
         st.components.v1.html(show_product_carousel(df).data, height=400, scrolling=True)
