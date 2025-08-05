@@ -69,7 +69,7 @@ def get_search_plan(user_query):
     response = client.chat.completions.create(
         model="gpt-4.1-mini",
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.0,
+        temperature=0.3,
     )
     return response.choices[0].message.content.strip()
 
