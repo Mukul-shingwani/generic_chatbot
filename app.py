@@ -2,7 +2,6 @@ from openai import OpenAI
 import os
 import streamlit as st
 import re
-from IPython.display import HTML
 import requests
 import pandas as pd
 
@@ -87,7 +86,7 @@ def show_product_carousel(df):
         </div>
         '''
     html += '</div>'
-    return HTML(html)
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def fetch_top_products(query, country_code="AE", limit=1, sort_by="popularity", sort_dir="desc"):
