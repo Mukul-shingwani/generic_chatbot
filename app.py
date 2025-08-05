@@ -121,21 +121,6 @@ def fetch_top_products(query, country_code="AE", limit=1, sort_by="popularity", 
     "Upgrade-Insecure-Requests" : "1"
     }
 
-    session = requests.Session()
-    request = requests.Request('GET', url, params=params, headers=headers)
-    prepared = request.prepare()
-    # print(f"🔗 Final URL being called:\n{prepared.url}\n")
-
-    response = session.send(prepared)
-
-    st.write(f"🔗 URL: {response.url}")
-    st.write(f"Status Code: {response.status_code}")
-
-    if response.status_code != 200:
-            st.error(f"❌ Failed to fetch products. Status code: {response.status_code}")
-            st.text(response.text)
-            return pd.DataFrame()
-
     try:
         response = requests.get(url, params=params, headers=headers)
 
