@@ -80,7 +80,7 @@ def extract_queries(llm_text):
 
 
 def show_product_carousel(df):
-    html = '<div style="display: flex; overflow-x: auto; padding: 10px;">'
+    html = '<div style="display: flex; overflow-x: auto; padding: 10px; width: 100%">'
     for _, row in df.iterrows():
         html += f'''
         <div style="flex: 0 0 auto; text-align: center; margin-right: 20px;">
@@ -212,7 +212,7 @@ if st.button("Generate Search Plan & Show Products") and user_query:
     if results:
         df = pd.concat(results, ignore_index=True)
         st.markdown("#### 🛒 Top Product Recommendations")
-        st.write(df)  # See raw HTML in plain text
+        # st.write(df)  # See raw HTML in plain text
         html_carousel = show_product_carousel(df)
         st.components.v1.html(html_carousel, height=420, scrolling=True)
     else:
