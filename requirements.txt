@@ -4,4 +4,4 @@ requests
 openai>=1.1.0
 ffmpeg-python
 st-audiorec
--e git+https://github.com/openai/whisper.git#egg=whisper
+faster-whisper
