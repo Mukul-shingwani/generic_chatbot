@@ -2,6 +2,6 @@ streamlit
 pandas
 requests
 openai>=1.1.0
-whisper @ git+https://github.com/openai/whisper.git
+git+https://github.com/openai/whisper.git
 ffmpeg-python
 st-audiorec
