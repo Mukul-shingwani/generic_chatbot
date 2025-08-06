@@ -4,7 +4,6 @@ import streamlit as st
 import re
 import requests
 import pandas as pd
-import html
 
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
@@ -81,29 +80,21 @@ def extract_queries(llm_text):
 
 
 def show_product_carousel(df):
-    html = """
-    <div style="display: flex; overflow-x: auto; white-space: nowrap; padding: 20px 0; width: 100%;">
-    """
-
+    html = '<div style="display: flex; overflow-x: auto; padding: 10px;">'
     for _, row in df.iterrows():
-        name = row["Name"][:60] + ("..." if len(row["Name"]) > 60 else "")
-        rating = row["Rating"]
-        price = row.get("Sale Price (AED)", row.get("Price (AED)", "N/A"))
-        star = f"⭐ {rating}" if rating != "N/A" else "⭐"
-
-        html += f"""
-        <div style="flex: 0 0 auto; text-align: center; margin-right: 30px; width: 170px;">
+        html += f'''
+        <div style="flex: 0 0 auto; text-align: center; margin-right: 20px;">
             <a href="{row['Product URL']}" target="_blank">
                 <img src="{row['Image URL']}" width="150" style="border-radius: 8px;">
             </a>
-            <div style="font-weight:bold; margin-top:8px;">{name}</div>
-            <div style="margin-top:4px;">AED {price}</div>
-            <div style="margin-top:2px;">{star}</div>
+            <div style="font-weight:bold; margin-top:5px;">{row["Name"][:40]}...</div>
+            <div>{row["Brand"]}</div>
+            <div>AED {row.get("Sale Price (AED)", row.get("Price (AED)", "N/A"))}</div>
+            <div>⭐ {row["Rating"]}</div>
         </div>
-        """
-
-    html += "</div>"
-    return html
+        '''
+    html += '</div>'
+    return html  # Return string, not IPython HTML
 
 
 
