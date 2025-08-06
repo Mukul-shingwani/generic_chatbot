@@ -82,7 +82,7 @@ def extract_queries(llm_text):
 
 def show_product_carousel(df):
     html = '''
-    <div style="width: 100%; overflow-x: auto; padding: 10px;">
+    <div style="width: 100vw; overflow-x: auto; padding: 10px; box-sizing: border-box;">
         <div style="display: flex; gap: 20px; min-width: max-content;">
     '''
 
@@ -94,13 +94,13 @@ def show_product_carousel(df):
         product_url = row['Product URL']
 
         html += f'''
-        <div style="flex: 0 0 auto; text-align: center;">
+        <div style="flex: 0 0 auto; text-align: center; width: 180px;">
             <a href="{product_url}" target="_blank">
                 <img src="{image_url}" width="150" height="150" style="object-fit: contain; border-radius: 8px;">
             </a>
             <div style="font-weight:bold; margin-top:5px;">{name}</div>
-            <div>AED {sale_price}</div>
-            <div>⭐ {rating}</div>
+            <div style="margin-top: 2px;">AED {sale_price}</div>
+            <div style="margin-top: 2px;">⭐ {rating}</div>
         </div>
         '''
 
