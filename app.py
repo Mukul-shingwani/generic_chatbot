@@ -4,12 +4,12 @@ import streamlit as st
 import re
 import requests
 import pandas as pd
-import tempfile
-from faster_whisper import WhisperModel
-from st_audiorec import st_audiorec  # this provides a mic recording button
+# import tempfile
+# from faster_whisper import WhisperModel
+# from st_audiorec import st_audiorec  # this provides a mic recording button
 
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
-whisper_model = WhisperModel("base", compute_type="int8")  # or "float32" if error
+# whisper_model = WhisperModel("base", compute_type="int8")  # or "float32" if error
 
 def build_prompt(user_query):
     return f"""
@@ -185,41 +185,31 @@ def fetch_top_products(query, country_code="AE", limit=2, sort_by="popularity", 
 
 
 st.set_page_config(page_title="noon Assistant", layout="wide")
+
 st.title("🛍️ noon Assistant")
-st.markdown("Enter your query — either type it or use voice — and we’ll fetch the top picks!")
+st.markdown("Enter your query — whether it's a **plan**, a **buying task**, or **recipe support**, and we’ll fetch the top picks!")
 
-# Record audio
-wav_audio_data = st_audiorec()
-
-user_query = None
-
-if wav_audio_data is not None:
-    st.success("✅ Voice input received.")
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
-        tmp_file.write(wav_audio_data)
-        audio_path = tmp_file.name
-
-    with st.spinner("🎙️ Transcribing audio..."):
-        segments, _ = whisper_model.transcribe(audio_path)
-        user_query = " ".join([seg.text for seg in segments])
-        st.markdown(f"**Transcribed Query:** `{user_query}`")
-    os.remove(audio_path)
-else:
-    user_query = st.text_input("💬 What do you need help with?", placeholder="e.g., Help me plan a beach picnic", key="user_query")
+user_query = st.text_input("💬 What do you need help with?", placeholder="e.g., Help me plan a beach picnic", key="user_query")
 
 if st.button("Generate Search Plan & Show Products") and user_query:
-    with st.spinner("🤖 Generating search plan using GenAI..."):
+    with st.spinner("Generating search plan using GenAI..."):
         result = get_search_plan(user_query)
         queries = extract_queries(result)
         st.markdown("#### ✨ Detected Search Steps")
         st.code(result, language="yaml")
 
+    queries = extract_queries(result)
     results = []
+    
     for i, q in enumerate(queries):
+        # st.markdown(f"### 🔍 Step {i+1}: Searching for {q}")
         df_item = fetch_top_products(query=q)
+        
         if df_item.empty:
-            st.warning(f"No results found for: `{q}`")
+            st.warning(f"No results found for: {q}")
         else:
+            # st.success(f"✅ Found {len(df_item)} items for: {q}")
+            # st.dataframe(df_item)  # Debug: show intermediate result
             results.append(df_item)
 
     if results:
