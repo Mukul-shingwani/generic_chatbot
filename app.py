@@ -5,6 +5,7 @@ import re
 import requests
 import pandas as pd
 
+
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
 def build_prompt(user_query):
@@ -214,6 +215,6 @@ if st.button("Generate Search Plan & Show Products") and user_query:
         st.markdown("#### 🛒 Top Product Recommendations")
         # st.write(df)  # See raw HTML in plain text
         html_carousel = show_product_carousel(df)
-        st.components.v1.html(html_carousel, height=420, width=720)
+        st.html(html_carousel)
     else:
         st.warning("No products found. Try refining your query.")
