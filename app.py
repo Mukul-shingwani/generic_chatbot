@@ -9,7 +9,7 @@ from faster_whisper import WhisperModel
 from st_audiorec import st_audiorec  # this provides a mic recording button
 
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
-model = WhisperModel("base", compute_type="int8")
+whisper_model = WhisperModel("base", compute_type="int8")  # or "float32" if error
 
 def build_prompt(user_query):
     return f"""
