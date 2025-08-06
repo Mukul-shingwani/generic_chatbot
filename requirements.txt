@@ -2,6 +2,4 @@ streamlit
 pandas
 requests
 openai>=1.1.0
-ffmpeg-python
-st-audiorec
-faster-whisper
+
