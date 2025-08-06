@@ -218,14 +218,14 @@ if st.button("Generate Search Plan & Show Products") and user_query:
         if df_item.empty:
             st.warning(f"No results found for: `{q}`")
         else:
-            # st.success(f"✅ Found {len(df_item)} items for: `{q}`")
-            # st.dataframe(df_item)  # Debug: show intermediate result
+            st.success(f"✅ Found {len(df_item)} items for: `{q}`")
+            st.dataframe(df_item)  # Debug: show intermediate result
             results.append(df_item)
 
     if results:
         df = pd.concat(results, ignore_index=True)
         st.markdown("#### 🛒 Top Product Recommendations")
-        st.write(show_product_carousel(df))  # See raw HTML in plain text
+        st.write(df)  # See raw HTML in plain text
         st.components.v1.html(show_product_carousel(df), height=400, scrolling=True)
     else:
         st.warning("No products found. Try refining your query.")
