@@ -4,12 +4,8 @@ import streamlit as st
 import re
 import requests
 import pandas as pd
-# import tempfile
-# from faster_whisper import WhisperModel
-# from st_audiorec import st_audiorec  # this provides a mic recording button
 
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
-# whisper_model = WhisperModel("base", compute_type="int8")  # or "float32" if error
 
 def build_prompt(user_query):
     return f"""
@@ -184,7 +180,7 @@ def fetch_top_products(query, country_code="AE", limit=2, sort_by="popularity", 
         return pd.DataFrame()
 
 
-st.set_page_config(page_title="noon Assistant", layout="wide")
+st.set_page_config(page_title="Noon Smart Shopping Assistant", layout="wide")
 
 st.title("🛍️ noon Assistant")
 st.markdown("Enter your query — whether it's a **plan**, a **buying task**, or **recipe support**, and we’ll fetch the top picks!")
@@ -200,15 +196,15 @@ if st.button("Generate Search Plan & Show Products") and user_query:
 
     queries = extract_queries(result)
     results = []
-    
+
     for i, q in enumerate(queries):
-        # st.markdown(f"### 🔍 Step {i+1}: Searching for {q}")
+        # st.markdown(f"### 🔍 Step {i+1}: Searching for `{q}`")
         df_item = fetch_top_products(query=q)
-        
+
         if df_item.empty:
-            st.warning(f"No results found for: {q}")
+            st.warning(f"No results found for: `{q}`")
         else:
-            # st.success(f"✅ Found {len(df_item)} items for: {q}")
+            # st.success(f"✅ Found {len(df_item)} items for: `{q}`")
             # st.dataframe(df_item)  # Debug: show intermediate result
             results.append(df_item)
 
