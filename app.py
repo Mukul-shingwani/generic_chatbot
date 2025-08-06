@@ -81,26 +81,34 @@ def extract_queries(llm_text):
 
 
 def show_product_carousel(df):
-    html_content = '<div style="display: flex; overflow-x: auto; padding: 10px;">'
+    html_content = '''
+    <div style="width: 100%; overflow-x: scroll;">
+        <div style="display: flex; gap: 20px; padding: 10px; min-width: max-content;">
+    '''
+    
     for _, row in df.iterrows():
         name = html.escape(str(row["Name"][:40]) + "...")
         brand = html.escape(str(row["Brand"]))
         price = html.escape(str(row.get("Sale Price (AED)", row.get("Price (AED)", "N/A"))))
         rating = html.escape(str(row["Rating"]))
+        product_url = row['Product URL']
+        image_url = row['Image URL']
 
         html_content += f'''
-        <div style="flex: 0 0 auto; text-align: center; margin-right: 20px;">
-            <a href="{row['Product URL']}" target="_blank">
-                <img src="{row['Image URL']}" width="150" style="border-radius: 8px;">
-            </a>
-            <div style="font-weight:bold; margin-top:5px;">{name}</div>
-            <div>{brand}</div>
-            <div>AED {price}</div>
-            <div>⭐ {rating}</div>
-        </div>
+            <div style="flex: 0 0 auto; text-align: center;">
+                <a href="{product_url}" target="_blank">
+                    <img src="{image_url}" width="150" style="border-radius: 8px;">
+                </a>
+                <div style="font-weight:bold; margin-top:5px;">{name}</div>
+                <div>{brand}</div>
+                <div>AED {price}</div>
+                <div>⭐ {rating}</div>
+            </div>
         '''
-    html_content += '</div>'
+
+    html_content += '</div></div>'
     return html_content
+
 
 
 def fetch_top_products(query, country_code="AE", limit=2, sort_by="popularity", sort_dir="desc"):
