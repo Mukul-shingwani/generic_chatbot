@@ -81,31 +81,30 @@ def extract_queries(llm_text):
 
 
 def show_product_carousel(df):
-    html = '''
-    <div style="width: 100vw; overflow-x: auto; padding: 10px; box-sizing: border-box;">
-        <div style="display: flex; gap: 20px; min-width: max-content;">
-    '''
+    html = """
+    <div style="display: flex; overflow-x: auto; white-space: nowrap; padding: 20px 0; width: 100%;">
+    """
 
     for _, row in df.iterrows():
-        image_url = row['Image URL']
-        name = str(row['Name'])[:50] + "..." if len(str(row['Name'])) > 50 else str(row['Name'])
-        sale_price = row['Sale Price (AED)'] if pd.notna(row['Sale Price (AED)']) else "N/A"
-        rating = row['Rating'] if pd.notna(row['Rating']) else "N/A"
-        product_url = row['Product URL']
+        name = row["Name"][:60] + ("..." if len(row["Name"]) > 60 else "")
+        rating = row["Rating"]
+        price = row.get("Sale Price (AED)", row.get("Price (AED)", "N/A"))
+        star = f"⭐ {rating}" if rating != "N/A" else "⭐"
 
-        html += f'''
-        <div style="flex: 0 0 auto; text-align: center; width: 180px;">
-            <a href="{product_url}" target="_blank">
-                <img src="{image_url}" width="150" height="150" style="object-fit: contain; border-radius: 8px;">
+        html += f"""
+        <div style="flex: 0 0 auto; text-align: center; margin-right: 30px; width: 170px;">
+            <a href="{row['Product URL']}" target="_blank">
+                <img src="{row['Image URL']}" width="150" style="border-radius: 8px;">
             </a>
-            <div style="font-weight:bold; margin-top:5px;">{name}</div>
-            <div style="margin-top: 2px;">AED {sale_price}</div>
-            <div style="margin-top: 2px;">⭐ {rating}</div>
+            <div style="font-weight:bold; margin-top:8px;">{name}</div>
+            <div style="margin-top:4px;">AED {price}</div>
+            <div style="margin-top:2px;">{star}</div>
         </div>
-        '''
+        """
 
-    html += '</div></div>'
+    html += "</div>"
     return html
+
 
 
 def fetch_top_products(query, country_code="AE", limit=2, sort_by="popularity", sort_dir="desc"):
@@ -215,8 +214,8 @@ if st.button("Generate Search Plan & Show Products") and user_query:
         if df_item.empty:
             st.warning(f"No results found for: `{q}`")
         else:
-            st.success(f"✅ Found {len(df_item)} items for: `{q}`")
-            st.dataframe(df_item)  # Debug: show intermediate result
+            # st.success(f"✅ Found {len(df_item)} items for: `{q}`")
+            # st.dataframe(df_item)  # Debug: show intermediate result
             results.append(df_item)
 
     if results:
@@ -224,6 +223,6 @@ if st.button("Generate Search Plan & Show Products") and user_query:
         st.markdown("#### 🛒 Top Product Recommendations")
         st.write(df)  # See raw HTML in plain text
         html_carousel = show_product_carousel(df)
-        st.components.v1.html(html_carousel, height=400, scrolling=True)
+        st.components.v1.html(html_carousel, height=420, scrolling=True)
     else:
         st.warning("No products found. Try refining your query.")
