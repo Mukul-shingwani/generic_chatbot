@@ -132,8 +132,8 @@ def fetch_top_products(query, country_code="AE", limit=2, sort_by="popularity", 
     try:
         response = requests.get(url, params=params, headers=headers)
 
-        # st.write(f"🔗 URL: {response.url}")
-        # st.write(f"Status Code: {response.status_code}")
+        st.write(f"🔗 URL: {response.url}")
+        st.write(f"Status Code: {response.status_code}")
 
         if response.status_code != 200:
             st.error(f"❌ Failed to fetch products. Status code: {response.status_code}")
@@ -198,14 +198,14 @@ if st.button("Generate Search Plan & Show Products") and user_query:
     results = []
 
     for i, q in enumerate(queries):
-        # st.markdown(f"### 🔍 Step {i+1}: Searching for `{q}`")
+        st.markdown(f"### 🔍 Step {i+1}: Searching for `{q}`")
         df_item = fetch_top_products(query=q)
 
         if df_item.empty:
             st.warning(f"No results found for: `{q}`")
         else:
-            # st.success(f"✅ Found {len(df_item)} items for: `{q}`")
-            # st.dataframe(df_item)  # Debug: show intermediate result
+            st.success(f"✅ Found {len(df_item)} items for: `{q}`")
+            st.dataframe(df_item)  # Debug: show intermediate result
             results.append(df_item)
 
     if results:
