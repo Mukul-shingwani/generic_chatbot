@@ -170,7 +170,7 @@ def fetch_top_products(query, country_code="AE", limit=2, sort_by="popularity", 
                 "Price (AED)": product.get("price", "N/A"),
                 "Sale Price (AED)": product.get("sale_price", "N/A"),
                 "Rating": product.get("product_rating", {}).get("value", "N/A"),
-                "Product URL": f"https://www.noon.com/{product.get('url', '')}"
+                "Product URL": f"https://www.noon.com/uae-en/{product.get('sku', '')}/p/"
             })
 
         return pd.DataFrame(results)
