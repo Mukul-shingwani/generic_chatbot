@@ -5,11 +5,11 @@ import re
 import requests
 import pandas as pd
 import tempfile
-import whisper
+from faster_whisper import WhisperModel
 from st_audiorec import st_audiorec  # this provides a mic recording button
 
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
-whisper_model = whisper.load_model("base")
+model = WhisperModel("base", compute_type="int8")
 
 def build_prompt(user_query):
     return f"""
@@ -191,6 +191,8 @@ st.markdown("Enter your query — either type it or use voice — and we’ll fe
 # Record audio
 wav_audio_data = st_audiorec()
 
+user_query = None
+
 if wav_audio_data is not None:
     st.success("✅ Voice input received.")
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
@@ -198,8 +200,8 @@ if wav_audio_data is not None:
         audio_path = tmp_file.name
 
     with st.spinner("🎙️ Transcribing audio..."):
-        result_whisper = whisper_model.transcribe(audio_path)
-        user_query = result_whisper["text"]
+        segments, _ = whisper_model.transcribe(audio_path)
+        user_query = " ".join([seg.text for seg in segments])
         st.markdown(f"**Transcribed Query:** `{user_query}`")
     os.remove(audio_path)
 else:
