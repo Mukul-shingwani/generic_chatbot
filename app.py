@@ -18,14 +18,24 @@ def build_prompt(user_query):
         - For example, instead of "return gifts", suggest things like "mini chocolates", "puzzle kits", "coloring books" etc.
         - Suggest items that make sense for the occasion and are typically bought online.
         - Only include **one specific item per search step**
-    3. If intent is 'shopping'**:
-        - Extract item names and optional filters such as brand, price, etc.
-        - If user mentions vague terms like "top brands", "best brands" or "budget friendly", replace that with 5 most relevant real brand names **actually available on noon.com** and return a list.
-        - You MUST call the `web_search_preview` tool to find brands for the category or query from noon.com
-        - Format brands in lowercase and use underscores instead of spaces (e.g., `palm_olive`).
-        - Do NOT hallucinate brands. Only use brands found on noon.com.
-        - Always consider the brand tier (e.g., top brand vs. budget brand) when generating the results. Recommendations for top brands should prioritize premium, high-quality alternatives, 
-        while recommendations for budget brands should focus on affordability and value. Do not mix brand tiers. Keep the tone, features, and positioning aligned with the brand's segment."
+    3. If intent is **shopping**:
+    - Extract product name and optional filters like price, brand, quantity.
+    - If user uses vague brand indicators like:
+        - "top brands", "luxury brands", "high-end"
+            - Replace with **real premium brands actually found on Noon**.
+        - "budget", "cheap", "affordable"
+            - Replace with **real budget-tier brands actually found on Noon**.
+
+     - You MUST use the web_search_preview tool to identify real brand names for the specific category.
+
+    - NEVER hallucinate brands. Only include brands present on Noon.
+
+    - Format all brand names in lowercase and underscores (e.g., tommy_hilfiger).
+
+    - STRICTLY enforce brand tier alignment:
+        - If user asks for **budget** brands, ONLY return **budget-tier** brands (low-cost, value-driven).
+        - If user asks for **top/luxury** brands, ONLY return **premium-tier** brands (high-end, designer, well-rated).
+        - Do NOT mix tiers in a single result list.
 
     4. For **cooking/recipe** queries:
        - Identify the **top 5 essential ingredients or products** required for the recipe that a user can buy online.
