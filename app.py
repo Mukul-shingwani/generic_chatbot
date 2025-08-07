@@ -19,6 +19,7 @@ def build_prompt(user_query):
         - Suggest items that make sense for the occasion and are typically bought online.
         - Only include **one specific item per search step**
     3. For shopping queries, extract item name, quantity as search query and filters like brand, price, rating, etc.
+        - if user writes things such as 'top brands', 'budget friendly', dont put these in serach query, but give the real brand names in lowercase and separate by underscore incase brand name has space in it.
     4. For **cooking/recipe** queries:
        - Identify the **top 5 essential ingredients or products** required for the recipe that a user can buy online.
        - Only suggest **non-perishable, e-commerce-friendly** items — i.e., things that are commonly sold online such as:
@@ -134,7 +135,7 @@ def fetch_top_products(query, country_code="AE", limit=2, sort_by="popularity", 
     try:
         response = requests.get(url, params=params, headers=headers)
 
-        # st.write(f"🔗 URL: {response.url}")
+        st.write(f"🔗 URL: {response.url}")
         # st.write(f"Status Code: {response.status_code}")
 
         if response.status_code != 200:
@@ -200,7 +201,7 @@ if st.button("Generate Search Plan & Show Products") and user_query:
     results = []
     
     for i, q in enumerate(queries):
-        # st.markdown(f"### 🔍 Step {i+1}: Searching for `{q}`")
+        st.markdown(f"### 🔍 Step {i+1}: Searching for `{q}`")
         df_item = fetch_top_products(query=q)
         
         if df_item.empty:
