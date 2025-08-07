@@ -262,7 +262,7 @@ def validator_llm_batched(user_query, df):
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4.1-nano",
+            model="gpt-4.1-mini",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
         )
