@@ -224,7 +224,7 @@ def fetch_top_products(query, country_code="AE", limit=2, sort_by="popularity", 
         return pd.DataFrame()
 
 
-st.set_page_config(page_title="Noon Smart Shopping Assistant", layout="wide")
+st.set_page_config(page_title="noon Assistant", layout="wide")
 
 st.title("🛍️ noon Assistant")
 st.markdown("Enter your query — whether it's a **plan**, a **buying task**, or **recipe support**, and we’ll fetch the top picks!")
@@ -238,44 +238,32 @@ if st.button("Generate Search Plan & Show Products") and user_query:
         st.markdown("#### ✨ Detected Search Steps")
         st.code(result, language="yaml")
 
-    queries = extract_queries(result)
     results = []
-    
-    # for i, q in enumerate(queries):
-    #     st.markdown(f"### 🔍 Step {i+1}: Searching for `{q}`")
-    #     df_item = fetch_top_products(query=q)
-        
-    #     if df_item.empty:
-    #         st.warning(f"No results found for: `{q}`")
-    #     else:
-    #         # st.success(f"✅ Found {len(df_item)} items for: `{q}`")
-    #         # st.dataframe(df_item)  # Debug: show intermediate result
-    #         results.append(df_item)
-    for i, q_step in enumerate(queries):
-        q = q_step.get("q")
-        filters = q_step.get("filters", {})
 
-        if not q:
-            continue
+    with st.spinner("⏳ Hang on, getting the best recommendations for you..."):
+        for i, q_step in enumerate(queries):
+            q = q_step.get("q")
+            filters = q_step.get("filters", {})
 
-        # st.markdown(f"### 🔍 Step {i+1}: Searching for `{q}`")
+            if not q:
+                continue
 
-        if "brand" in filters:
-            for brand in filters["brand"]:
-                brand_query = f"{q}/{brand}"
-                df_item = fetch_top_products(query=brand_query)
+            if "brand" in filters:
+                for brand in filters["brand"]:
+                    brand_query = f"{q}/{brand}"
+                    df_item = fetch_top_products(query=brand_query)
+                    if not df_item.empty:
+                        results.append(df_item)
+            else:
+                df_item = fetch_top_products(query=q)
                 if not df_item.empty:
                     results.append(df_item)
-        else:
-            df_item = fetch_top_products(query=q)
-            if not df_item.empty:
-                results.append(df_item)
 
     if results:
         df = pd.concat(results, ignore_index=True)
         st.markdown("#### 🛒 Top Product Recommendations")
-        # st.write(df)  # See raw HTML in plain text
         html_carousel = show_product_carousel(df)
         st.html(html_carousel)
     else:
         st.warning("No products found. Try refining your query.")
+
