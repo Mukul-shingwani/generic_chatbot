@@ -4,7 +4,7 @@ import streamlit as st
 import re
 import requests
 import pandas as pd
-
+import yaml
 
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
@@ -105,9 +105,20 @@ def get_search_plan(user_query):
     # response.output_text.strip()
 
 
+# def extract_queries(llm_text):
+#     pattern = r'q:\s*"(.*?)"'
+#     return re.findall(pattern, llm_text)
+
 def extract_queries(llm_text):
-    pattern = r'q:\s*"(.*?)"'
-    return re.findall(pattern, llm_text)
+    try:
+        parsed = yaml.safe_load(llm_text)
+        if not parsed or "search_steps" not in parsed:
+            return []
+        return parsed["search_steps"]
+    except yaml.YAMLError as e:
+        st.error("⚠️ Failed to parse LLM response as YAML.")
+        st.exception(e)
+        return []
 
 
 def show_product_carousel(df):
@@ -229,16 +240,35 @@ if st.button("Generate Search Plan & Show Products") and user_query:
     queries = extract_queries(result)
     results = []
     
-    for i, q in enumerate(queries):
-        st.markdown(f"### 🔍 Step {i+1}: Searching for `{q}`")
-        df_item = fetch_top_products(query=q)
+    # for i, q in enumerate(queries):
+    #     st.markdown(f"### 🔍 Step {i+1}: Searching for `{q}`")
+    #     df_item = fetch_top_products(query=q)
         
-        if df_item.empty:
-            st.warning(f"No results found for: `{q}`")
+    #     if df_item.empty:
+    #         st.warning(f"No results found for: `{q}`")
+    #     else:
+    #         # st.success(f"✅ Found {len(df_item)} items for: `{q}`")
+    #         # st.dataframe(df_item)  # Debug: show intermediate result
+    #         results.append(df_item)
+    for i, q_step in enumerate(queries):
+        q = q_step.get("q")
+        filters = q_step.get("filters", {})
+
+        if not q:
+            continue
+
+        st.markdown(f"### 🔍 Step {i+1}: Searching for `{q}`")
+
+        if "brand" in filters:
+            for brand in filters["brand"]:
+                brand_query = f"{q}/{brand}"
+                df_item = fetch_top_products(query=brand_query)
+                if not df_item.empty:
+                    results.append(df_item)
         else:
-            # st.success(f"✅ Found {len(df_item)} items for: `{q}`")
-            # st.dataframe(df_item)  # Debug: show intermediate result
-            results.append(df_item)
+            df_item = fetch_top_products(query=q)
+            if not df_item.empty:
+                results.append(df_item)
 
     if results:
         df = pd.concat(results, ignore_index=True)
