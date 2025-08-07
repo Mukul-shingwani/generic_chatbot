@@ -15,14 +15,14 @@ def build_prompt(user_query):
     Your job:
     1. Detect if the query is about "planning" (like planning a party, picnic, etc.) or "shopping" (explicit buy orders) or "cooking/recipe".
     2. For planning queries
-        - Start with a warm, brief **introductory line** summarizing the user's plan, e.g. "Sounds like you're planning a fun beach day! Here’s a list of essentials you might want to shop for:"
+        - Start with a warm, brief **introductory line** summarizing the user's plan, e.g. "Sounds like you're planning a fun beach day! Here’s a list of essentials you might want to shop for:" but not just limited to this.
         - suggest a list of top 5 most relevant items, in order of relevance, that the user might want to buy online to fulfill the task. Be specific.
         - For example, instead of "return gifts", suggest things like "mini chocolates", "puzzle kits", "coloring books" etc.
         - Suggest items that make sense for the occasion and are typically bought online.
         - Only include **one specific item per search step**
         - Donot apply unnecessary filters unless asked for 
     3. If intent is **shopping**:
-    - Begin with a friendly confirmation, e.g.,  "Got it! You're looking to explore some great options for [product]. Here's a curated list of top brands you can check out:"
+    - Begin with a friendly confirmation, e.g.,  "Got it! You're looking to explore some great options for [product]. Here's a curated list of top brands you can check out:" but not just limited to this.
     - Extract product/category name and optional filters like brand
     - If user uses vague brand indicators like:
         - "top brands", "luxury brands", "high-end" - Replace with **real premium brands actually found on Noon**.
@@ -43,7 +43,7 @@ def build_prompt(user_query):
         - Do NOT mix tiers in a single result list.
 
     4. For **cooking/recipe** queries:
-       - Begin with a natural suggestion, e.g.,  "Planning to cook butter chicken? Here's a quick list of items you’ll likely need and can easily order online:"
+       - Begin with a natural suggestion, e.g.,  "Planning to cook butter chicken? Here's a quick list of items you’ll likely need and can easily order online:" but not just limited to this.
        - Identify the **top 5 essential ingredients or products** required for the recipe that a user can buy online.
        - Only suggest **non-perishable, e-commerce-friendly** items — i.e., things that are commonly sold online such as:
          - packaged spices (e.g., garam masala, turmeric, red chili powder)
@@ -65,6 +65,7 @@ def build_prompt(user_query):
     - {{q: "item2", filters: {{brand: ["xyz","abc_123", "yyy", "z_rty", "pqrs", 'xd', 'yyu', '678', 'poi', 'lkj'], max_price: "100"}}}}
     
     Think like an e-commerce expert of middle east — only include things users can buy online, strictly relevant to ecommerce. Don’t mention services like booking a restaurant or sending invites.
+    Be creative and conversational while forming the introductory message.
     
     Input: {user_query}
     Output:
@@ -175,7 +176,7 @@ def fetch_top_products(query, country_code="AE", limit=2, sort_by="popularity", 
     try:
         response = requests.get(url, params=params, headers=headers)
 
-        st.write(f"🔗 URL: {response.url}")
+        # st.write(f"🔗 URL: {response.url}")
         # st.write(f"Status Code: {response.status_code}")
 
         if response.status_code != 200:
@@ -257,7 +258,7 @@ if st.button("Generate Search Plan & Show Products") and user_query:
         if not q:
             continue
 
-        st.markdown(f"### 🔍 Step {i+1}: Searching for `{q}`")
+        # st.markdown(f"### 🔍 Step {i+1}: Searching for `{q}`")
 
         if "brand" in filters:
             for brand in filters["brand"]:
