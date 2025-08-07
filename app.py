@@ -308,4 +308,3 @@ if st.button("Generate Search Plan & Show Products") and user_query:
             st.html(html_carousel)
     else:
         st.warning("No products found. Try refining your query.")
-
