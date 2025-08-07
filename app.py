@@ -29,8 +29,8 @@ def build_prompt(user_query):
         - "budget", "cheap", "affordable" - Replace with **real budget-tier brands actually found on Noon**.
     - NEVER hallucinate brands. Only include brands present on Noon.
     - Format all brand names in lowercase and underscores (e.g., tommy_hilfiger).
-    - Return 7 most relevant brands unless exact brand names are provided to you
-    - Donot apply unnecessary filters unless asked for in the query
+    - Return 7 most relevant brands when user asks for "top brands", "good brands" etc when exact brand names are provided to you use that only. If nothing around brands is mentioned donot apply.
+    - Donot apply unnecessary filters unless asked for by the user, and take decision depending on search query/category.
     Tier Examples :
         Luxury - YSL, Prada, Chanel, Gucci, Louis Vuitton
         Premium - Michael Kors, Coach, Guess, Tommy Hilfiger
