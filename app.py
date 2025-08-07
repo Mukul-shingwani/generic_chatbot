@@ -14,28 +14,23 @@ def build_prompt(user_query):
     
     Your job:
     1. Detect if the query is about "planning" (like planning a party, picnic, etc.) or "shopping" (explicit buy orders) or "cooking/recipe".
-    2. For planning queries, suggest a list of top 10 most relevant items, in order of relevance, that the user might want to buy online to fulfill the task. Be specific.
+    2. For planning queries, suggest a list of top 5 most relevant items, in order of relevance, that the user might want to buy online to fulfill the task. Be specific.
         - For example, instead of "return gifts", suggest things like "mini chocolates", "puzzle kits", "coloring books" etc.
         - Suggest items that make sense for the occasion and are typically bought online.
         - Only include **one specific item per search step**
     3. If intent is **shopping**:
-    - Extract product name and optional filters like price, brand, quantity.
+    - Extract product/category name and optional filters like price, brand, quantity.
     - If user uses vague brand indicators like:
-        - "top brands", "luxury brands", "high-end"
-            - Replace with **real premium brands actually found on Noon**.
-        - "budget", "cheap", "affordable"
-            - Replace with **real budget-tier brands actually found on Noon**.
+        - "top brands", "luxury brands", "high-end" - Replace with **real premium brands actually found on Noon**.
+        - "budget", "cheap", "affordable" - Replace with **real budget-tier brands actually found on Noon**.
     - NEVER hallucinate brands. Only include brands present on Noon.
     - Format all brand names in lowercase and underscores (e.g., tommy_hilfiger).
+    - Return 7 most relevant brands
     Tier Examples :
-        Luxury
-            - YSL, Prada, Chanel, Gucci, Louis Vuitton
-        Premium
-            - Michael Kors, Coach, Guess, Tommy Hilfiger
-        Mid-tier
-            - Zara, Aldo, Nine West, Charles & Keith
-        Budget
-            - Caprese, Styli, Generic, Parfois, Duniso
+        Luxury - YSL, Prada, Chanel, Gucci, Louis Vuitton
+        Premium - Michael Kors, Coach, Guess, Tommy Hilfiger
+        Mid-tier - Zara, Aldo, Nine West, Charles & Keith
+        Budget - Caprese, Styli, Generic, Parfois, Duniso
 
     - STRICTLY enforce brand tier alignment:
         - If user asks for **budget** brands, ONLY return **budget-tier** brands (low-cost, value-driven).
@@ -90,25 +85,18 @@ def build_prompt(user_query):
 
 def get_search_plan(user_query):
     prompt = build_prompt(user_query)
-    # response = client.chat.completions.create(
-    #     model="gpt-4.1",
-    #     tools=[{"type": "web_search_preview"}],
-    #     input = prompt
-    #     # messages=[{"role": "user", "content": prompt}],
-    #     # temperature=0.3,
-    # )
-    response = client.responses.create(
-                    model="gpt-4.1",
-                    tools=[{"type": "web_search_preview"}],
-                    input= prompt
-                )
-    # return response.choices[0].message.content.strip()
-    if hasattr(response, "tool_calls"):
-        # Optionally process tool call here
-        print("Tool call requested by model:")
-
-    return response.output_text.strip()
-
+    response = client.chat.completions.create(
+        model="gpt-4.1",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3
+    )
+    # response = client.responses.create(
+    #                 model="gpt-4.1",
+    #                 tools=[{"type": "web_search_preview"}],
+    #                 input= prompt
+    #             )
+    return response.choices[0].message.content.strip()
+    # response.output_text.strip()
 
 
 def extract_queries(llm_text):
