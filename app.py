@@ -69,13 +69,18 @@ def build_prompt(user_query):
 
 def get_search_plan(user_query):
     prompt = build_prompt(user_query)
-    response = client.chat.completions.create(
-        model="gpt-4.1",
-        tools=[{"type": "web_search_preview"}],
-        input = prompt
-        # messages=[{"role": "user", "content": prompt}],
-        # temperature=0.3,
-    )
+    # response = client.chat.completions.create(
+    #     model="gpt-4.1",
+    #     tools=[{"type": "web_search_preview"}],
+    #     input = prompt
+    #     # messages=[{"role": "user", "content": prompt}],
+    #     # temperature=0.3,
+    # )
+    response = client.responses.create(
+                    model="gpt-4.1",
+                    tools=[{"type": "web_search_preview"}],
+                    input= prompt
+                )
     return response.choices[0].message.content.strip()
 
 
