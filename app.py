@@ -142,7 +142,7 @@ def show_product_carousel(df):
 
 
 
-def fetch_top_products(query, country_code="AE", limit=2, sort_by="popularity", sort_dir="desc"):
+def fetch_top_products(query, country_code="AE", limit=3, sort_by="popularity", sort_dir="desc"):
     url = "https://api-app.noon.com/_svc/catalog/api/v3/search"
 
     params = {
@@ -225,6 +225,36 @@ def fetch_top_products(query, country_code="AE", limit=2, sort_by="popularity", 
         return pd.DataFrame()
 
 
+def prompt_for_validation(user_query, search_step, product_name, sku):
+    return f"""
+You are an intelligent product validation assistant at noon.com.
+
+Your job is to verify if the given product is **relevant** to the user's original shopping query and the specific search step.
+
+Respond ONLY with "1" (relevant) or "0" (irrelevant).
+
+User Query: "{user_query}"  
+Search Step: "{search_step}"  
+Product Name: "{product_name}"  
+SKU: "{sku}"
+
+Is this product relevant? Respond with only 1 or 0:
+"""
+
+
+def validator_llm(user_query, search_step, product_name, sku):
+    prompt = prompt_for_validation(user_query, search_step, product_name, sku)
+    response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.0
+    )
+    content = response.choices[0].message.content.strip()
+    return int(content) if content in ["0", "1"] else 0  # fallback to 0 if unclear
+
+
+# ---------------------- Main Streamlit App -----------------------
+
 st.set_page_config(page_title="noon Assistant", layout="wide")
 
 st.title("🛍️ noon Assistant")
@@ -254,17 +284,30 @@ if st.button("Generate Search Plan & Show Products") and user_query:
                     brand_query = f"{q}/{brand}"
                     df_item = fetch_top_products(query=brand_query)
                     if not df_item.empty:
+                        df_item["search_step"] = q
                         results.append(df_item)
             else:
                 df_item = fetch_top_products(query=q)
                 if not df_item.empty:
+                    df_item["search_step"] = q
                     results.append(df_item)
 
     if results:
         df = pd.concat(results, ignore_index=True)
-        st.markdown("#### 🛒 Top Product Recommendations")
-        html_carousel = show_product_carousel(df)
-        st.html(html_carousel)
+
+        with st.spinner("🔍 Validating product relevance..."):
+            df["is_relevant"] = df.apply(
+                lambda row: validator_llm(user_query, row["search_step"], row["Name"], row["SKU"]),
+                axis=1
+            )
+            df = df[df["is_relevant"] == 1]
+
+        if df.empty:
+            st.warning("No relevant products found after validation.")
+        else:
+            st.markdown("#### 🛒 Top Product Recommendations")
+            html_carousel = show_product_carousel(df)
+            st.html(html_carousel)
     else:
         st.warning("No products found. Try refining your query.")
 
