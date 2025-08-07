@@ -25,12 +25,18 @@ def build_prompt(user_query):
             - Replace with **real premium brands actually found on Noon**.
         - "budget", "cheap", "affordable"
             - Replace with **real budget-tier brands actually found on Noon**.
-
      - You MUST use the web_search_preview tool to identify real brand names for the specific category.
-
     - NEVER hallucinate brands. Only include brands present on Noon.
-
     - Format all brand names in lowercase and underscores (e.g., tommy_hilfiger).
+    Tier Examples :
+        Luxury
+            - YSL, Prada, Chanel, Gucci, Louis Vuitton
+        Premium
+            - Michael Kors, Coach, Guess, Tommy Hilfiger
+        Mid-tier
+            - Zara, Aldo, Nine West, Charles & Keith
+        Budget
+            - Caprese, Styli, Generic, Parfois, Duniso
 
     - STRICTLY enforce brand tier alignment:
         - If user asks for **budget** brands, ONLY return **budget-tier** brands (low-cost, value-driven).
