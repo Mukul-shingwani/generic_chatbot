@@ -14,18 +14,21 @@ def build_prompt(user_query):
     
     Your job:
     1. Detect if the query is about "planning" (like planning a party, picnic, etc.) or "shopping" (explicit buy orders) or "cooking/recipe".
-    2. For planning queries, suggest a list of top 5 most relevant items, in order of relevance, that the user might want to buy online to fulfill the task. Be specific.
+    2. For planning queries
+        - Start with a warm, brief **introductory line** summarizing the user's plan, e.g. "Sounds like you're planning a fun beach day! Here’s a list of essentials you might want to shop for:"
+        - suggest a list of top 5 most relevant items, in order of relevance, that the user might want to buy online to fulfill the task. Be specific.
         - For example, instead of "return gifts", suggest things like "mini chocolates", "puzzle kits", "coloring books" etc.
         - Suggest items that make sense for the occasion and are typically bought online.
         - Only include **one specific item per search step**
     3. If intent is **shopping**:
-    - Extract product/category name and optional filters like price, brand, quantity.
+    - Begin with a friendly confirmation, e.g.,  "Got it! You're looking to explore some great options for [product]. Here's a curated list of top brands you can check out:"
+    - Extract product/category name and optional filters like brand
     - If user uses vague brand indicators like:
         - "top brands", "luxury brands", "high-end" - Replace with **real premium brands actually found on Noon**.
         - "budget", "cheap", "affordable" - Replace with **real budget-tier brands actually found on Noon**.
     - NEVER hallucinate brands. Only include brands present on Noon.
     - Format all brand names in lowercase and underscores (e.g., tommy_hilfiger).
-    - Return 7 most relevant brands
+    - Return 7 most relevant brands unless exact brand names are provided to you
     Tier Examples :
         Luxury - YSL, Prada, Chanel, Gucci, Louis Vuitton
         Premium - Michael Kors, Coach, Guess, Tommy Hilfiger
@@ -38,6 +41,7 @@ def build_prompt(user_query):
         - Do NOT mix tiers in a single result list.
 
     4. For **cooking/recipe** queries:
+       - Begin with a natural suggestion, e.g.,  "Planning to cook butter chicken? Here's a quick list of items you’ll likely need and can easily order online:"
        - Identify the **top 5 essential ingredients or products** required for the recipe that a user can buy online.
        - Only suggest **non-perishable, e-commerce-friendly** items — i.e., things that are commonly sold online such as:
          - packaged spices (e.g., garam masala, turmeric, red chili powder)
@@ -51,7 +55,7 @@ def build_prompt(user_query):
        - Do not give cooking instructions. Only extract shoppable items.
 
     5. Output your answer in this format:
-    
+    <introductory message>
     intent: planning/shopping  
     search_steps:
     - {{q: "item1"}} or  
@@ -59,29 +63,28 @@ def build_prompt(user_query):
     
     Think like an e-commerce expert of middle east — only include things users can buy online, strictly relevant to ecommerce. Don’t mention services like booking a restaurant or sending invites.
     
-    Examples:
-    
-    Input: "Help me plan a kids birthday party"
-    Output:
-    intent: planning
-    search_steps:
-    - {{q: "birthday balloons"}}
-    - {{q: "chocolate cake"}}
-    - {{q: "mini chocolates"}}
-    - {{q: "party snacks"}}
-    - {{q: "colorful paper plates"}}
-    
-    Input: "Buy 1kg sugar of MDH under 100 aed, and 2kg tur dal from same brand"
-    Output:
-    intent: shopping
-    search_steps:
-    - {{q: "1kg sugar", filters: {{brand: "MDH", max_price: "100"}}}}
-    - {{q: "2kg tur dal", filters: {{brand: "MDH"}}}}
-    
     Input: {user_query}
     Output:
     """
 
+# Examples:
+    
+#     Input: "Help me plan a kids birthday party"
+#     Output:
+#     intent: planning
+#     search_steps:
+#     - {{q: "birthday balloons"}}
+#     - {{q: "chocolate cake"}}
+#     - {{q: "mini chocolates"}}
+#     - {{q: "party snacks"}}
+#     - {{q: "colorful paper plates"}}
+    
+#     Input: "Buy 1kg sugar of MDH under 100 aed, and 2kg tur dal from same brand"
+#     Output:
+#     intent: shopping
+#     search_steps:
+#     - {{q: "1kg sugar", filters: {{brand: "MDH", max_price: "100"}}}}
+#     - {{q: "2kg tur dal", filters: {{brand: "MDH"}}}}
 
 def get_search_plan(user_query):
     prompt = build_prompt(user_query)
