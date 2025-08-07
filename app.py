@@ -225,21 +225,19 @@ def fetch_top_products(query, country_code="AE", limit=3, sort_by="popularity", 
         return pd.DataFrame()
 
 
-def prompt_for_validation(user_query, search_step, product_name, sku):
+def prompt_for_validation(user_query, search_step, product_name):
     return f"""
-You are an intelligent product validation assistant at noon.com.
+    You are an intelligent product validation assistant at noon.com.
+    Your job is to verify if the given product is **relevant** to the user's original shopping query and the specific search step.
 
-Your job is to verify if the given product is **relevant** to the user's original shopping query and the specific search step.
-
-Respond ONLY with "1" (relevant) or "0" (irrelevant).
-
-User Query: "{user_query}"  
-Search Step: "{search_step}"  
-Product Name: "{product_name}"  
-SKU: "{sku}"
-
-Is this product relevant? Respond with only 1 or 0:
-"""
+    Respond ONLY with "1" (relevant) or "0" (irrelevant).
+    
+    User Query: {user_query}
+    Search Step: {search_step}
+    Product Name: {product_name}" 
+    
+    Is this product relevant? Respond with only 1 or 0:
+    """
 
 
 def validator_llm(user_query, search_step, product_name, sku):
@@ -297,7 +295,7 @@ if st.button("Generate Search Plan & Show Products") and user_query:
 
         with st.spinner("🔍 Validating product relevance..."):
             df["is_relevant"] = df.apply(
-                lambda row: validator_llm(user_query, row["search_step"], row["Name"], row["SKU"]),
+                lambda row: validator_llm(user_query, row["search_step"], row["Name"]),
                 axis=1
             )
             df = df[df["is_relevant"] == 1]
