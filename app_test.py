@@ -6,7 +6,7 @@ import requests
 import pandas as pd
 import yaml
 
-client = OpenAI(api_key = "sk-proj-bOszO2AZdRb31x2pGnM9T3BlbkFJz7URFBeeQklpHz6OOcxz")
+client = OpenAI(api_key = "sk-hahha")
 
 def build_prompt(user_query):
     return f"""
