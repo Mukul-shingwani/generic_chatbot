@@ -30,6 +30,7 @@ def build_prompt(user_query):
     - NEVER hallucinate brands. Only include brands present on Noon.
     - Format all brand names in lowercase and underscores (e.g., tommy_hilfiger).
     - Return 7 most relevant brands unless exact brand names are provided to you
+    - Donot apply unnecessary filters unless asked for in the query
     Tier Examples :
         Luxury - YSL, Prada, Chanel, Gucci, Louis Vuitton
         Premium - Michael Kors, Coach, Guess, Tommy Hilfiger
