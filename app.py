@@ -240,8 +240,8 @@ def prompt_for_validation(user_query, search_step, product_name):
     """
 
 
-def validator_llm(user_query, search_step, product_name, sku):
-    prompt = prompt_for_validation(user_query, search_step, product_name, sku)
+def validator_llm(user_query, search_step, product_name):
+    prompt = prompt_for_validation(user_query, search_step, product_name)
     response = client.chat.completions.create(
         model="gpt-4.1-mini",
         messages=[{"role": "user", "content": prompt}],
