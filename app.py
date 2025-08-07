@@ -10,7 +10,7 @@ client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
 def build_prompt(user_query):
     return f"""
-    You are an e-commerce shopping assistant based out of middle east.
+    You are an e-commerce shopping assistant based out of middle east, noon.com
     
     Your job:
     1. Detect if the query is about "planning" (like planning a party, picnic, etc.) or "shopping" (explicit buy orders) or "cooking/recipe".
@@ -20,6 +20,7 @@ def build_prompt(user_query):
         - Only include **one specific item per search step**
     3. For shopping queries, extract item name, quantity as search query and filters like brand, price, rating, etc.
         - if user writes things such as 'top brands', 'budget friendly', dont put these in serach query, but give the list of top 5 real brand names in lowercase and separate by underscore incase brand name has space in it.
+        - Make sure the brand is present in noon ecommerce company assortment.
     4. For **cooking/recipe** queries:
        - Identify the **top 5 essential ingredients or products** required for the recipe that a user can buy online.
        - Only suggest **non-perishable, e-commerce-friendly** items — i.e., things that are commonly sold online such as:
@@ -70,8 +71,10 @@ def get_search_plan(user_query):
     prompt = build_prompt(user_query)
     response = client.chat.completions.create(
         model="gpt-4.1",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
+        tools=[{"type": "web_search_preview"}],
+        input = prompt
+        # messages=[{"role": "user", "content": prompt}],
+        # temperature=0.3,
     )
     return response.choices[0].message.content.strip()
 
