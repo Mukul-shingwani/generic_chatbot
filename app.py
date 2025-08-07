@@ -10,7 +10,7 @@ client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
 def build_prompt(user_query):
     return f"""
-    You are an e-commerce shopping assistant based out of middle east, noon.com
+    You are an e-commerce shopping assistant based out of middle east in noon.com, majority customers are middle class.
     
     Your job:
     1. Detect if the query is about "planning" (like planning a party, picnic, etc.) or "shopping" (explicit buy orders) or "cooking/recipe".
