@@ -225,145 +225,60 @@ def fetch_top_products(query, country_code="AE", limit=3, sort_by="popularity", 
         return pd.DataFrame()
 
 
-def build_batched_validation_prompt(user_query, df):
-    """
-    Constructs a prompt for batch validation of all products in one go.
-    """
-    prompt = f"""
-You are a smart and precise product relevance assistant at noon.com.
+# def build_batched_validation_prompt(user_query, df):
+#     """
+#     Constructs a prompt for batch validation of all products in one go.
+#     """
+#     prompt = f"""
+# You are a smart and precise product relevance assistant at noon.com.
 
-Your job is to check whether each product is **relevant** to the user's original query and the corresponding search step.
+# Your job is to check whether each product is **relevant** to the user's original query and the corresponding search step.
 
-For each entry, return a list of **0** or **1** only, where:
-- 1 means "Relevant"
-- 0 means "Irrelevant"
-
-User Query: '{user_query}'
-
-Below are the search steps and products:
-"""
-    for i, row in df.iterrows():
-        prompt += f"""
-{i+1}.
-Search Step: '{row['search_step']}'
-Product Name: '{row['Name']}'
-SKU: '{row['SKU']}'
-"""
-
-    prompt += "\nRespond with only a list of 0s and 1s corresponding to each entry above, like:\n[1, 0, 1, 1, 0]\n\nAnswer:"
-    return prompt
-
-
-def validator_llm_batched(user_query, df):
-    prompt = build_batched_validation_prompt(user_query, df)
-
-    # with st.expander("🔍 Prompt Sent to LLM"):
-    #     st.code(prompt, language="markdown")
-
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4.1-mini",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.0,
-        )
-        content = response.choices[0].message.content.strip()
-
-        with st.expander("📬 LLM Response for Relevance"):
-            st.code(content, language="python")
-
-        flags = eval(content)
-        if isinstance(flags, list) and all(x in [0, 1] for x in flags):
-            return flags
-        else:
-            raise ValueError("Invalid response format")
-    except Exception as e:
-        st.error(f"❌ Validation failed: {e}")
-        return [0] * len(df)
-
-
-# ---------------------- Main Streamlit App -----------------------
-
-st.set_page_config(page_title="noon Assistant", layout="wide")
-
-st.title("🛍️ noon Assistant")
-st.markdown("Enter your query — whether it's a **plan**, a **buying task**, or **recipe support**, and we’ll fetch the top picks!")
-
-user_query = st.text_input("💬 What do you need help with?", placeholder="e.g., Help me plan a beach picnic", key="user_query")
-
-if st.button("Generate Search Plan & Show Products") and user_query:
-    with st.spinner("🤖 Generating search plan using GenAI..."):
-        result = get_search_plan(user_query)
-        queries = extract_queries(result)
-        st.markdown("#### ✨ Detected Search Steps")
-        st.code(result, language="yaml")
-
-    results = []
-
-    with st.spinner("⏳ Hang on, getting the best recommendations for you..."):
-        for i, q_step in enumerate(queries):
-            q = q_step.get("q")
-            filters = q_step.get("filters", {})
-
-            if not q:
-                continue
-
-            if "brand" in filters:
-                for brand in filters["brand"]:
-                    brand_query = f"{q}/{brand}"
-                    df_item = fetch_top_products(query=brand_query)
-                    if not df_item.empty:
-                        df_item["search_step"] = q
-                        results.append(df_item)
-            else:
-                df_item = fetch_top_products(query=q)
-                if not df_item.empty:
-                    df_item["search_step"] = q
-                    results.append(df_item)
-
-    if results:
-        df = pd.concat(results, ignore_index=True)
-
-        with st.spinner("🔍 Validating product relevance..."):
-            flags = validator_llm_batched(user_query, df)
-            df["is_relevant"] = flags
-            df = df[df["is_relevant"] == 1]
-
-        if df.empty:
-            st.warning("No relevant products found after validation.")
-        else:
-            st.markdown("#### 🛒 Top Product Recommendations")
-            html_carousel = show_product_carousel(df)
-            st.html(html_carousel)
-    else:
-        st.warning("No products found. Try refining your query.")
-
-
-# def prompt_for_validation(user_query, search_step, product_name, sku):
-#     return f"""
-# You are an intelligent product validation assistant at noon.com.
-
-# Your job is to verify if the given product is **relevant** to the user's original shopping query and the specific search step.
-
-# Respond ONLY with "1" (relevant) or "0" (irrelevant).
+# For each entry, return a list of **0** or **1** only, where:
+# - 1 means "Relevant"
+# - 0 means "Irrelevant"
 
 # User Query: '{user_query}'
-# Search Step: '{search_step}'
-# Product Name: '{product_name}'
-# SKU: '{sku}'
 
-# Is this product relevant? Respond with only 1 or 0:
+# Below are the search steps and products:
+# """
+#     for i, row in df.iterrows():
+#         prompt += f"""
+# {i+1}.
+# Search Step: '{row['search_step']}'
+# Product Name: '{row['Name']}'
+# SKU: '{row['SKU']}'
 # """
 
+#     prompt += "\nRespond with only a list of 0s and 1s corresponding to each entry above, like:\n[1, 0, 1, 1, 0]\n\nAnswer:"
+#     return prompt
 
-# def validator_llm(user_query, search_step, product_name, sku):
-#     prompt = prompt_for_validation(user_query, search_step, product_name, sku)
-#     response = client.chat.completions.create(
-#         model="gpt-4.1-mini",
-#         messages=[{"role": "user", "content": prompt}],
-#         temperature=0.0
-#     )
-#     content = response.choices[0].message.content.strip()
-#     return int(content) if content in ["0", "1"] else 0  # fallback to 0 if unclear
+
+# def validator_llm_batched(user_query, df):
+#     prompt = build_batched_validation_prompt(user_query, df)
+
+#     # with st.expander("🔍 Prompt Sent to LLM"):
+#     #     st.code(prompt, language="markdown")
+
+#     try:
+#         response = client.chat.completions.create(
+#             model="gpt-4.1-mini",
+#             messages=[{"role": "user", "content": prompt}],
+#             temperature=0.0,
+#         )
+#         content = response.choices[0].message.content.strip()
+
+#         with st.expander("📬 LLM Response for Relevance"):
+#             st.code(content, language="python")
+
+#         flags = eval(content)
+#         if isinstance(flags, list) and all(x in [0, 1] for x in flags):
+#             return flags
+#         else:
+#             raise ValueError("Invalid response format")
+#     except Exception as e:
+#         st.error(f"❌ Validation failed: {e}")
+#         return [0] * len(df)
 
 
 # # ---------------------- Main Streamlit App -----------------------
@@ -376,7 +291,7 @@ if st.button("Generate Search Plan & Show Products") and user_query:
 # user_query = st.text_input("💬 What do you need help with?", placeholder="e.g., Help me plan a beach picnic", key="user_query")
 
 # if st.button("Generate Search Plan & Show Products") and user_query:
-#     with st.spinner("Generating search plan using GenAI..."):
+#     with st.spinner("🤖 Generating search plan using GenAI..."):
 #         result = get_search_plan(user_query)
 #         queries = extract_queries(result)
 #         st.markdown("#### ✨ Detected Search Steps")
@@ -409,10 +324,8 @@ if st.button("Generate Search Plan & Show Products") and user_query:
 #         df = pd.concat(results, ignore_index=True)
 
 #         with st.spinner("🔍 Validating product relevance..."):
-#             df["is_relevant"] = df.apply(
-#                 lambda row: validator_llm(user_query, row["search_step"], row["Name"], row["SKU"]),
-#                 axis=1
-#             )
+#             flags = validator_llm_batched(user_query, df)
+#             df["is_relevant"] = flags
 #             df = df[df["is_relevant"] == 1]
 
 #         if df.empty:
@@ -423,3 +336,90 @@ if st.button("Generate Search Plan & Show Products") and user_query:
 #             st.html(html_carousel)
 #     else:
 #         st.warning("No products found. Try refining your query.")
+
+
+def prompt_for_validation(user_query, search_step, product_name, sku):
+    return f"""
+You are an intelligent product validation assistant at noon.com.
+
+Your job is to verify if the given product is **relevant** to the user's original shopping query and the specific search step.
+
+Respond ONLY with "1" (relevant) or "0" (irrelevant).
+
+User Query: '{user_query}'
+Search Step: '{search_step}'
+Product Name: '{product_name}'
+SKU: '{sku}'
+
+Is this product relevant? Respond with only 1 or 0:
+"""
+
+
+def validator_llm(user_query, search_step, product_name, sku):
+    prompt = prompt_for_validation(user_query, search_step, product_name, sku)
+    response = client.chat.completions.create(
+        model="gpt-4.1-mini",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.0
+    )
+    content = response.choices[0].message.content.strip()
+    return int(content) if content in ["0", "1"] else 0  # fallback to 0 if unclear
+
+
+# ---------------------- Main Streamlit App -----------------------
+
+st.set_page_config(page_title="noon Assistant", layout="wide")
+
+st.title("🛍️ noon Assistant")
+st.markdown("Enter your query — whether it's a **plan**, a **buying task**, or **recipe support**, and we’ll fetch the top picks!")
+
+user_query = st.text_input("💬 What do you need help with?", placeholder="e.g., Help me plan a beach picnic", key="user_query")
+
+if st.button("Generate Search Plan & Show Products") and user_query:
+    with st.spinner("Generating search plan using GenAI..."):
+        result = get_search_plan(user_query)
+        queries = extract_queries(result)
+        st.markdown("#### ✨ Detected Search Steps")
+        st.code(result, language="yaml")
+
+    results = []
+
+    with st.spinner("⏳ Hang on, getting the best recommendations for you..."):
+        for i, q_step in enumerate(queries):
+            q = q_step.get("q")
+            filters = q_step.get("filters", {})
+
+            if not q:
+                continue
+
+            if "brand" in filters:
+                for brand in filters["brand"]:
+                    brand_query = f"{q}/{brand}"
+                    df_item = fetch_top_products(query=brand_query)
+                    if not df_item.empty:
+                        df_item["search_step"] = q
+                        results.append(df_item)
+            else:
+                df_item = fetch_top_products(query=q)
+                if not df_item.empty:
+                    df_item["search_step"] = q
+                    results.append(df_item)
+
+    if results:
+        df = pd.concat(results, ignore_index=True)
+
+        with st.spinner("🔍 Validating product relevance..."):
+            df["is_relevant"] = df.apply(
+                lambda row: validator_llm(user_query, row["search_step"], row["Name"], row["SKU"]),
+                axis=1
+            )
+            df = df[df["is_relevant"] == 1]
+
+        if df.empty:
+            st.warning("No relevant products found after validation.")
+        else:
+            st.markdown("#### 🛒 Top Product Recommendations")
+            html_carousel = show_product_carousel(df)
+            st.html(html_carousel)
+    else:
+        st.warning("No products found. Try refining your query.")
