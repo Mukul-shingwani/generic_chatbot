@@ -31,6 +31,7 @@ def build_prompt(user_query):
     - Format all brand names in lowercase and underscores (e.g., tommy_hilfiger).
     - Return 7 most relevant brands when user asks for "top brands", "good brands" etc when exact brand names are provided to you use that only. If nothing around brands is mentioned donot apply.
     - Donot apply unnecessary filters unless asked for by the user, and take decision depending on search query/category.
+    - Ensure the brands you are recommending are known and relevant as per the product category.
     Tier Examples :
         Luxury - YSL, Prada, Chanel, Gucci, Louis Vuitton
         Premium - Michael Kors, Coach, Guess, Tommy Hilfiger
