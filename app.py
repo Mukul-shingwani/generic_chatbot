@@ -20,6 +20,7 @@ def build_prompt(user_query):
         - For example, instead of "return gifts", suggest things like "mini chocolates", "puzzle kits", "coloring books" etc.
         - Suggest items that make sense for the occasion and are typically bought online.
         - Only include **one specific item per search step**
+        - Donot apply unnecessary filters unless asked for 
     3. If intent is **shopping**:
     - Begin with a friendly confirmation, e.g.,  "Got it! You're looking to explore some great options for [product]. Here's a curated list of top brands you can check out:"
     - Extract product/category name and optional filters like brand
@@ -53,6 +54,7 @@ def build_prompt(user_query):
        - Think like an online grocery expert. Suggest items a user would likely need but may not already have at home.
        - Only 1 item per search step.
        - Do not give cooking instructions. Only extract shoppable items.
+       - Donot apply unnecessary filters unless asked for 
 
     5. Output your answer in this format:
     <introductory message>
