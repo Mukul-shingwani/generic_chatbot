@@ -20,7 +20,7 @@ def build_prompt(user_query):
         - Only include **one specific item per search step**
     3. For shopping queries, extract item name, quantity as search query and filters like brand, price, rating, etc.
         - if user writes things such as 'top brands', 'budget friendly', dont put these in serach query, but give the list of top 5 real brand names in lowercase and separate by underscore incase brand name has space in it.
-        - Make sure the brand is present in noon ecommerce company assortment.
+        - Make sure the brand is present in noon ecommerce company assortment by utilizing the web search to fetch relevant brands (if needed).
     4. For **cooking/recipe** queries:
        - Identify the **top 5 essential ingredients or products** required for the recipe that a user can buy online.
        - Only suggest **non-perishable, e-commerce-friendly** items — i.e., things that are commonly sold online such as:
