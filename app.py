@@ -81,8 +81,9 @@ def get_search_plan(user_query):
                     tools=[{"type": "web_search_preview"}],
                     input= prompt
                 )
-    return response.choices[0].message.content.strip()
+    # return response.choices[0].message.content.strip()
 
+    return response.output_text.strip()
 
 def extract_queries(llm_text):
     pattern = r'q:\s*"(.*?)"'
