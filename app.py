@@ -257,8 +257,8 @@ SKU: '{row['SKU']}'
 def validator_llm_batched(user_query, df):
     prompt = build_batched_validation_prompt(user_query, df)
 
-    with st.expander("🔍 Prompt Sent to LLM"):
-        st.code(prompt, language="markdown")
+    # with st.expander("🔍 Prompt Sent to LLM"):
+    #     st.code(prompt, language="markdown")
 
     try:
         response = client.chat.completions.create(
