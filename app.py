@@ -14,7 +14,7 @@ def build_prompt(user_query):
     
     Your job:
     1. Detect if the query is about "planning" (like planning a party, picnic, etc.) or "shopping" (explicit buy orders) or "cooking/recipe".
-    2. For planning queries, suggest a list of top 5 most relevant items, in order of relevance, that the user might want to buy online to fulfill the task. Be specific.
+    2. For planning queries, suggest a list of top 10 most relevant items, in order of relevance, that the user might want to buy online to fulfill the task. Be specific.
         - For example, instead of "return gifts", suggest things like "mini chocolates", "puzzle kits", "coloring books" etc.
         - Suggest items that make sense for the occasion and are typically bought online.
         - Only include **one specific item per search step**
@@ -55,7 +55,7 @@ def build_prompt(user_query):
     intent: planning/shopping  
     search_steps:
     - {{q: "item1"}} or  
-    - {{q: "item2", filters: {{brand: ["xyz","abc_123", "yyy", "z_rty", "pqrs"], max_price: "100"}}}}
+    - {{q: "item2", filters: {{brand: ["xyz","abc_123", "yyy", "z_rty", "pqrs", 'xd', 'yyu', '678', 'poi', 'lkj'], max_price: "100"}}}}
     
     Think like an e-commerce expert of middle east — only include things users can buy online, strictly relevant to ecommerce. Don’t mention services like booking a restaurant or sending invites.
     
