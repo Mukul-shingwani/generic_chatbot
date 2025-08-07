@@ -18,9 +18,12 @@ def build_prompt(user_query):
         - For example, instead of "return gifts", suggest things like "mini chocolates", "puzzle kits", "coloring books" etc.
         - Suggest items that make sense for the occasion and are typically bought online.
         - Only include **one specific item per search step**
-    3. For shopping queries, extract item name, quantity as search query and filters like brand, price, rating, etc.
-        - if user writes things such as 'top brands', 'budget friendly', dont put these in serach query, but give the list of top 5 real brand names in lowercase and separate by underscore incase brand name has space in it.
-        - Make sure the brand is present in noon ecommerce company assortment by utilizing the web search to fetch relevant brands (if needed).
+    3. If intent is 'shopping'**:
+        - Extract item names and optional filters such as brand, price, etc.
+        - If user mentions vague terms like "top brands" or "best brands", replace that with real brand names **actually available on noon.com**.
+        - You MUST call the `web_search_preview` tool to find brands for the category or query from noon.com if not directly mentioned.
+        - Format brands in lowercase and use underscores instead of spaces (e.g., `palm_olive`).
+        - Do NOT hallucinate brands. Only use brands found on noon.com.
     4. For **cooking/recipe** queries:
        - Identify the **top 5 essential ingredients or products** required for the recipe that a user can buy online.
        - Only suggest **non-perishable, e-commerce-friendly** items — i.e., things that are commonly sold online such as:
@@ -67,23 +70,42 @@ def build_prompt(user_query):
     """
 
 
+# def get_search_plan(user_query):
+#     prompt = build_prompt(user_query)
+#     # response = client.chat.completions.create(
+#     #     model="gpt-4.1",
+#     #     tools=[{"type": "web_search_preview"}],
+#     #     input = prompt
+#     #     # messages=[{"role": "user", "content": prompt}],
+#     #     # temperature=0.3,
+#     # )
+#     response = client.responses.create(
+#                     model="gpt-4.1",
+#                     tools=[{"type": "web_search_preview"}],
+#                     input= prompt
+#                 )
+#     # return response.choices[0].message.content.strip()
+
+#     return response.output_text.strip()
+
+
 def get_search_plan(user_query):
     prompt = build_prompt(user_query)
-    # response = client.chat.completions.create(
-    #     model="gpt-4.1",
-    #     tools=[{"type": "web_search_preview"}],
-    #     input = prompt
-    #     # messages=[{"role": "user", "content": prompt}],
-    #     # temperature=0.3,
-    # )
-    response = client.responses.create(
-                    model="gpt-4.1",
-                    tools=[{"type": "web_search_preview"}],
-                    input= prompt
-                )
-    # return response.choices[0].message.content.strip()
+    response = client.chat.completions.create(
+        model="gpt-4.1",
+        tools=[{"type": "web_search_preview"}],
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3
+    )
 
-    return response.output_text.strip()
+    choice = response.choices[0]
+
+    if hasattr(choice.message, "tool_calls"):
+        # Optionally process tool call here
+        print("Tool call requested by model:", choice.message.tool_calls)
+
+    return choice.message.content.strip()
+
 
 def extract_queries(llm_text):
     pattern = r'q:\s*"(.*?)"'
