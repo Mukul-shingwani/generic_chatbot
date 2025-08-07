@@ -25,7 +25,6 @@ def build_prompt(user_query):
             - Replace with **real premium brands actually found on Noon**.
         - "budget", "cheap", "affordable"
             - Replace with **real budget-tier brands actually found on Noon**.
-     - You MUST use the web_search_preview tool to identify real brand names for the specific category.
     - NEVER hallucinate brands. Only include brands present on Noon.
     - Format all brand names in lowercase and underscores (e.g., tommy_hilfiger).
     Tier Examples :
