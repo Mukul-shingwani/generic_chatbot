@@ -9,7 +9,7 @@ import yaml
 from scipy.io.wavfile import write
 from faster_whisper import WhisperModel
 import tempfile
-# from st_audiorec import st_audiorec
+from st_audiorec import st_audiorec
 from audiorecorder import audiorecorder
 
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
@@ -432,7 +432,8 @@ if user_box_val != st.session_state.text:
 
 # Voice recorder block — this widget draws its own buttons.
 st.caption("🧑‍🎤 Or use your voice below:")
-audio_bytes = audiorecorder("Click to record", "Click to stop recording")
+audio_bytes = st_audiorec()
+# audio_bytes = audiorecorder("Click to record", "Click to stop recording")
 
 # If user recorded something new, transcribe once and sync to the text box
 if audio_bytes and len(audio_bytes) != st.session_state.last_audio_len:
