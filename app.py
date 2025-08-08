@@ -9,7 +9,6 @@ import yaml
 from scipy.io.wavfile import write
 from faster_whisper import WhisperModel
 import tempfile
-import sounddevice as sd
 
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
@@ -311,11 +310,13 @@ def validator_llm_batched(user_query, df):
         return {sku: 0 for sku in df["SKU"].tolist()}
 
 # ================== STT inclusion and final code ==================
+
 try:
-    import sounddevice as sd
+    import sounddevice as sd  # dev only
     from scipy.io.wavfile import write as wav_write
-    HAS_SD = True
+    HAS_SD = bool(os.environ.get("LOCAL_AUDIO", ""))  # set to "1" locally if you want to use sd
 except Exception:
+    sd = None
     HAS_SD = False
 
 try:
