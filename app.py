@@ -72,10 +72,10 @@ def build_prompt(user_query):
     - Allowed extras in q: explicit user-provided brand (e.g., “nike”), explicit user-provided quantity/size like “1kg”, “500ml”, “128gb” when user asks for it.
     - NO parentheses, hyphens, slashes, or marketing adjectives in q.
     - Examples
-        - ✅ "sunscreen", "beach towel", "power bank"
+        - ✅ "sunscreen", "beach towel", "power bank", "sugar"
         - ❌ "reef-safe sunscreen spf50 broad spectrum 200ml"
         - ✅ "1kg sugar" (only if user said 1kg)
-        - ❌ "expandable 24-inch spinner suitcase with tsa lock"
+        - ❌ "expandable 24-inch spinner suitcase with tsa lock", "low calorie powdered sugar"
     
     Think like an e-commerce expert of middle east — only include things users can buy online, strictly relevant to ecommerce. Don’t mention services like booking a restaurant or sending invites.
     Be creative and conversational while forming the introductory message.
