@@ -4,5 +4,4 @@ pyyaml
 faster-whisper
 sounddevice
 scipy
-streamlit-audiorecorder
 streamlit-audiorec
