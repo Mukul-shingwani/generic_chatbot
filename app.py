@@ -127,20 +127,68 @@ def get_search_plan(user_query):
     # response.output_text.strip()
 
 
-# def extract_queries(llm_text):
-#     pattern = r'q:\s*"(.*?)"'
-#     return re.findall(pattern, llm_text)
+def extract_queries(llm_text: str):
+    """
+    Try to parse the assistant's response for `search_steps`.
+    - First attempt proper YAML.
+    - If that fails, fall back to regex extraction of `q: "..."`.
+    Returns a normalized list of dicts: [{'q': '...', 'filters': {...}}, ...]
+    """
+    steps = []
 
-def extract_queries(llm_text):
+    # --- Try YAML first ---
     try:
-        parsed = yaml.safe_load(llm_text)
-        if not parsed or "search_steps" not in parsed:
-            return []
-        return parsed["search_steps"]
-    except yaml.YAMLError as e:
-        st.error("⚠️ Failed to parse LLM response as YAML.")
-        st.exception(e)
-        return []
+        doc = yaml.safe_load(llm_text)
+        if isinstance(doc, dict) and "search_steps" in doc:
+            for item in doc.get("search_steps") or []:
+                if isinstance(item, dict):
+                    q = item.get("q") or item.get("query")
+                    filters = item.get("filters") or {}
+                elif isinstance(item, str):
+                    q, filters = item.strip(), {}
+                else:
+                    continue
+
+                if q:
+                    # Normalize brand filter to list if a single string
+                    if isinstance(filters, dict) and "brand" in filters and isinstance(filters["brand"], str):
+                        filters["brand"] = [filters["brand"]]
+                    steps.append({"q": q, "filters": filters})
+            if steps:
+                return steps
+    except Exception as e:
+        # Show parser problem but keep going with regex fallback
+        with st.expander("⚠️ Failed to parse LLM response as YAML (show details)"):
+            st.exception(e)
+
+    # --- Regex fallback ---
+    # Pattern 1: - {q: "item", ...}
+    for m in re.findall(r'-\s*\{[^}]*q:\s*"([^"]+)"[^}]*\}', llm_text):
+        steps.append({"q": m.strip(), "filters": {}})
+
+    # Pattern 2: - q: "item"
+    if not steps:
+        for m in re.findall(r'-\s*q:\s*"([^"]+)"', llm_text):
+            steps.append({"q": m.strip(), "filters": {}})
+
+    # Pattern 3: bare q: "item" anywhere
+    if not steps:
+        for m in re.findall(r'\bq:\s*"([^"]+)"', llm_text):
+            steps.append({"q": m.strip(), "filters": {}})
+
+    return steps
+    
+
+# def extract_queries(llm_text):
+#     try:
+#         parsed = yaml.safe_load(llm_text)
+#         if not parsed or "search_steps" not in parsed:
+#             return []
+#         return parsed["search_steps"]
+#     except yaml.YAMLError as e:
+#         st.error("⚠️ Failed to parse LLM response as YAML.")
+#         st.exception(e)
+#         return []
 
 
 def show_product_carousel(df):
@@ -360,63 +408,165 @@ for key, default in [
         st.session_state[key] = default
 
 
-# ================== PIPELINE (full-width) ==================
 def run_pipeline(user_query: str):
-    # Everything below renders full-width (no columns)
+    # 1) Get plan + show raw text
     with st.spinner("🤖 Generating search plan using GenAI..."):
-        result = get_search_plan(user_query)
-        queries = extract_queries(result)
+        try:
+            result = get_search_plan(user_query)
+        except Exception as e:
+            st.error("Failed to generate a search plan.")
+            with st.expander("Details"):
+                st.exception(e)
+            return
+
         st.markdown("### ✨ Detected Search Steps")
         st.code(result, language="yaml")
 
+    # 2) Extract queries safely
+    queries = []
+    try:
+        queries = extract_queries(result)
+    except Exception as e:
+        with st.expander("⚠️ Couldn’t extract search steps (show details)"):
+            st.exception(e)
+
+    if not queries:
+        st.warning("I couldn’t extract valid search steps from the model’s reply. I’ll try your original query directly.")
+        queries = [{"q": user_query, "filters": {}}]
+
+    # 3) Fetch products
     results = []
     with st.spinner("⏳ Hang on, getting the best recommendations for you..."):
-        for q_step in queries:
-            # supports dict {q, filters} or plain string
-            if isinstance(q_step, dict):
-                q = q_step.get("q")
-                filters = q_step.get("filters", {}) or {}
-            else:
-                q, filters = str(q_step), {}
+        try:
+            for q_step in queries:
+                # supports dict {q, filters} or plain string
+                if isinstance(q_step, dict):
+                    q = q_step.get("q")
+                    filters = q_step.get("filters", {}) or {}
+                else:
+                    q, filters = str(q_step), {}
 
-            if not q:
-                continue
+                if not q:
+                    continue
 
-            if "brand" in filters and isinstance(filters["brand"], (list, tuple)):
-                for brand in filters["brand"]:
-                    df_item = fetch_top_products(query=f"{q}/{brand}")
+                if "brand" in filters and isinstance(filters["brand"], (list, tuple)):
+                    for brand in filters["brand"]:
+                        df_item = fetch_top_products(query=f"{q}/{brand}")
+                        if not df_item.empty:
+                            df_item["search_step"] = q
+                            results.append(df_item)
+                else:
+                    df_item = fetch_top_products(query=q)
                     if not df_item.empty:
                         df_item["search_step"] = q
                         results.append(df_item)
-            else:
-                df_item = fetch_top_products(query=q)
-                if not df_item.empty:
-                    df_item["search_step"] = q
-                    results.append(df_item)
+        except Exception as e:
+            st.error("There was a problem while fetching products.")
+            with st.expander("Details"):
+                st.exception(e)
+            return
 
     if not results:
         st.warning("No products found. Try refining your query.")
         return
 
+    # 4) Validate relevance (but don’t crash if validator fails)
     import pandas as pd
     df = pd.concat(results, ignore_index=True)
 
     with st.spinner("🔍 Validating product relevance..."):
-        # returns {sku: 0/1}
-        sku_to_flag = validator_llm_batched(user_query, df)
-        df["is_relevant"] = df["SKU"].map(sku_to_flag).fillna(0).astype(int)
-        df = df[df["is_relevant"] == 1]
+        try:
+            sku_to_flag = validator_llm_batched(user_query, df)  # expected {sku: 0/1}
+            if isinstance(sku_to_flag, dict):
+                df["is_relevant"] = df["SKU"].map(sku_to_flag).fillna(0).astype(int)
+            else:
+                # If validator returns something unexpected, don’t drop everything
+                st.info("Validator returned an unexpected format; showing unfiltered results.")
+                df["is_relevant"] = 1
+        except Exception as e:
+            st.info("Validator unavailable; showing unfiltered results.")
+            with st.expander("Validator error (details)"):
+                st.exception(e)
+            df["is_relevant"] = 1
+
+    df = df[df["is_relevant"] == 1]
 
     if df.empty:
         st.warning("No relevant products found after validation.")
         return
 
+    # 5) Render carousel
     st.markdown("### 🛒 Top Product Recommendations")
-    html = show_product_carousel(df)
     try:
-        st.html(html)
-    except Exception:
-        st.components.v1.html(html, height=420, scrolling=True)
+        html = show_product_carousel(df)
+        try:
+            st.html(html)
+        except Exception:
+            st.components.v1.html(html, height=420, scrolling=True)
+    except Exception as e:
+        st.error("Failed to render product carousel.")
+        with st.expander("Details"):
+            st.exception(e)
+
+
+
+# # ================== PIPELINE (full-width) ==================
+# def run_pipeline(user_query: str):
+#     # Everything below renders full-width (no columns)
+#     with st.spinner("🤖 Generating search plan using GenAI..."):
+#         result = get_search_plan(user_query)
+#         queries = extract_queries(result)
+#         st.markdown("### ✨ Detected Search Steps")
+#         st.code(result, language="yaml")
+
+#     results = []
+#     with st.spinner("⏳ Hang on, getting the best recommendations for you..."):
+#         for q_step in queries:
+#             # supports dict {q, filters} or plain string
+#             if isinstance(q_step, dict):
+#                 q = q_step.get("q")
+#                 filters = q_step.get("filters", {}) or {}
+#             else:
+#                 q, filters = str(q_step), {}
+
+#             if not q:
+#                 continue
+
+#             if "brand" in filters and isinstance(filters["brand"], (list, tuple)):
+#                 for brand in filters["brand"]:
+#                     df_item = fetch_top_products(query=f"{q}/{brand}")
+#                     if not df_item.empty:
+#                         df_item["search_step"] = q
+#                         results.append(df_item)
+#             else:
+#                 df_item = fetch_top_products(query=q)
+#                 if not df_item.empty:
+#                     df_item["search_step"] = q
+#                     results.append(df_item)
+
+#     if not results:
+#         st.warning("No products found. Try refining your query.")
+#         return
+
+#     import pandas as pd
+#     df = pd.concat(results, ignore_index=True)
+
+#     with st.spinner("🔍 Validating product relevance..."):
+#         # returns {sku: 0/1}
+#         sku_to_flag = validator_llm_batched(user_query, df)
+#         df["is_relevant"] = df["SKU"].map(sku_to_flag).fillna(0).astype(int)
+#         df = df[df["is_relevant"] == 1]
+
+#     if df.empty:
+#         st.warning("No relevant products found after validation.")
+#         return
+
+#     st.markdown("### 🛒 Top Product Recommendations")
+#     html = show_product_carousel(df)
+#     try:
+#         st.html(html)
+#     except Exception:
+#         st.components.v1.html(html, height=420, scrolling=True)
 
 
 # ================== INPUTS (text + voice) ==================
