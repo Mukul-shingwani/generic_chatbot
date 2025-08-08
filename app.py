@@ -23,6 +23,7 @@ def build_prompt(user_query):
         - Donot apply unnecessary filters unless asked for 
     3. If intent is **shopping**:
     - Begin with a friendly confirmation, e.g.,  "Got it! You're looking to explore some great options for [product]. Here's a curated list of top brands you can check out:" but not just limited to this.
+    - Keep the search step relevant and concise, not very long or too specific.
     - Extract product/category name and optional filters like brand
     - If user uses vague brand indicators like:
         - "top brands", "luxury brands", "high-end" - Replace with **real premium brands actually found on Noon**.
@@ -54,7 +55,7 @@ def build_prompt(user_query):
          - rice or packaged mixes (e.g., biryani mix, gravy base)
        - **Avoid** suggesting perishable items like fresh vegetables, milk, raw chicken, etc.
        - Think like an online grocery expert. Suggest items a user would likely need but may not already have at home.
-       - Only 1 item per search step.
+       - Only 1 item per search step and keep it relevant and concise, not very long or too specific.
        - Do not give cooking instructions. Only extract shoppable items.
        - Donot apply unnecessary filters unless asked for 
 
