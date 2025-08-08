@@ -6,7 +6,6 @@ import re
 import requests
 import pandas as pd
 import yaml
-import sounddevice as sd
 from scipy.io.wavfile import write
 from faster_whisper import WhisperModel
 import tempfile
