@@ -305,7 +305,7 @@ def validator_llm_batched(user_query, df):
         st.error(f"❌ Validation failed: {e}")
         return {sku: 0 for sku in df["SKU"].tolist()}
 
-## STT inclusion and final code
+# ================== STT inclusion and final code ==================
 try:
     import sounddevice as sd
     from scipy.io.wavfile import write as wav_write
