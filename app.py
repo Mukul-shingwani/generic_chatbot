@@ -1,3 +1,4 @@
+from sys import flags
 from openai import OpenAI
 import os
 import streamlit as st
@@ -5,6 +6,10 @@ import re
 import requests
 import pandas as pd
 import yaml
+import sounddevice as sd
+from scipy.io.wavfile import write
+from faster_whisper import WhisperModel
+import tempfile
 
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
