@@ -9,6 +9,7 @@ import yaml
 from scipy.io.wavfile import write
 from faster_whisper import WhisperModel
 import tempfile
+import sounddevice as sd
 
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
