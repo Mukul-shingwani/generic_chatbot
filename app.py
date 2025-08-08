@@ -9,6 +9,7 @@ import yaml
 from scipy.io.wavfile import write
 from faster_whisper import WhisperModel
 import tempfile
+from st_audiorec import st_audiorec
 
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
@@ -310,34 +311,79 @@ def validator_llm_batched(user_query, df):
         return {sku: 0 for sku in df["SKU"].tolist()}
 
 
+
+# Optional local transcription (free) via faster-whisper
+try:
+    from faster_whisper import WhisperModel
+    HAS_WHISPER = True
+except Exception:
+    HAS_WHISPER = False
+
+if "whisper_model" not in st.session_state:
+    st.session_state.whisper_model = None
+    if HAS_WHISPER:
+        try:
+            # int8 keeps it light on CPU-only boxes
+            st.session_state.whisper_model = WhisperModel("base", compute_type="int8")
+        except Exception as e:
+            st.warning(f"Could not load Whisper locally: {e}")
+
+import tempfile, os
+
+def transcribe_audio_bytes(audio_bytes: bytes) -> str:
+    """Persist WAV bytes to a tmp file -> faster-whisper -> text."""
+    if not HAS_WHISPER or st.session_state.whisper_model is None:
+        st.info("Transcription model not available on this server.")
+        return ""
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+        tmp.write(audio_bytes)
+        wav_path = tmp.name
+    try:
+        segments, _ = st.session_state.whisper_model.transcribe(wav_path)
+        return " ".join(seg.text for seg in segments).strip()
+    finally:
+        try: os.unlink(wav_path)
+        except Exception: pass
+
+
+# ================== PAGE & STATE ==================
 st.set_page_config(page_title="noon Assistant", layout="wide")
-
 st.title("🛍️ noon Assistant")
-st.markdown("Enter your query — whether it's a **plan**, a **buying task**, or **recipe support**, and we’ll fetch the top picks!")
+st.markdown("Type your query or use voice. We’ll generate a plan, fetch products, and validate relevance.")
 
-user_query = st.text_input("💬 What do you need help with?", placeholder="e.g., Help me plan a beach picnic", key="user_query")
+for key, default in [
+    ("text", ""),
+    ("last_audio_len", 0),   # to avoid re-transcribing the same audio on reruns
+]:
+    if key not in st.session_state:
+        st.session_state[key] = default
 
-if st.button("Generate Search Plan & Show Products") and user_query:
+
+# ================== PIPELINE (full-width) ==================
+def run_pipeline(user_query: str):
+    # Everything below renders full-width (no columns)
     with st.spinner("🤖 Generating search plan using GenAI..."):
         result = get_search_plan(user_query)
         queries = extract_queries(result)
-        st.markdown("#### ✨ Detected Search Steps")
+        st.markdown("### ✨ Detected Search Steps")
         st.code(result, language="yaml")
 
     results = []
-
     with st.spinner("⏳ Hang on, getting the best recommendations for you..."):
-        for i, q_step in enumerate(queries):
-            q = q_step.get("q")
-            filters = q_step.get("filters", {})
+        for q_step in queries:
+            # supports dict {q, filters} or plain string
+            if isinstance(q_step, dict):
+                q = q_step.get("q")
+                filters = q_step.get("filters", {}) or {}
+            else:
+                q, filters = str(q_step), {}
 
             if not q:
                 continue
 
-            if "brand" in filters:
+            if "brand" in filters and isinstance(filters["brand"], (list, tuple)):
                 for brand in filters["brand"]:
-                    brand_query = f"{q}/{brand}"
-                    df_item = fetch_top_products(query=brand_query)
+                    df_item = fetch_top_products(query=f"{q}/{brand}")
                     if not df_item.empty:
                         df_item["search_step"] = q
                         results.append(df_item)
@@ -347,54 +393,83 @@ if st.button("Generate Search Plan & Show Products") and user_query:
                     df_item["search_step"] = q
                     results.append(df_item)
 
-    if results:
-        df = pd.concat(results, ignore_index=True)
-
-        with st.spinner("🔍 Validating product relevance..."):
-            sku_to_flag = validator_llm_batched(user_query, df)
-            df["is_relevant"] = df["SKU"].map(sku_to_flag).fillna(0).astype(int)
-            df = df[df["is_relevant"] == 1]
-            # st.code(df)
-        if df.empty:
-            st.warning("No relevant products found after validation.")
-        else:
-            st.markdown("#### 🛒 Top Product Recommendations")
-            html_carousel = show_product_carousel(df)
-            st.html(html_carousel)
-    else:
+    if not results:
         st.warning("No products found. Try refining your query.")
+        return
+
+    import pandas as pd
+    df = pd.concat(results, ignore_index=True)
+
+    with st.spinner("🔍 Validating product relevance..."):
+        # returns {sku: 0/1}
+        sku_to_flag = validator_llm_batched(user_query, df)
+        df["is_relevant"] = df["SKU"].map(sku_to_flag).fillna(0).astype(int)
+        df = df[df["is_relevant"] == 1]
+
+    if df.empty:
+        st.warning("No relevant products found after validation.")
+        return
+
+    st.markdown("### 🛒 Top Product Recommendations")
+    html = show_product_carousel(df)
+    try:
+        st.html(html)
+    except Exception:
+        st.components.v1.html(html, height=420, scrolling=True)
 
 
+# ================== INPUTS (text + voice) ==================
+# Text box spans full width and reruns every keystroke so the Generate button enables immediately.
+user_box_val = st.text_input(
+    "💬 Your query (type or record):",
+    value=st.session_state.text,
+    key="query_box",
+    placeholder="e.g., Help me plan a beach picnic",
+)
+if user_box_val != st.session_state.text:
+    st.session_state.text = user_box_val
 
-# def prompt_for_validation(user_query, search_step, product_name, sku):
-#     return f"""
-# You are an intelligent product validation assistant at noon.com.
+# Voice recorder block — this widget draws its own buttons.
+st.caption("🧑‍🎤 Or use your voice below:")
+audio_bytes = st_audiorec()
 
-# Your job is to verify if the given product is **relevant** to the user's original shopping query and the specific search step.
-
-# Respond ONLY with "1" (relevant) or "0" (irrelevant).
-
-# User Query: '{user_query}'
-# Search Step: '{search_step}'
-# Product Name: '{product_name}'
-# SKU: '{sku}'
-
-# Is this product relevant? Respond with only 1 or 0:
-# """
-
-
-# def validator_llm(user_query, search_step, product_name, sku):
-#     prompt = prompt_for_validation(user_query, search_step, product_name, sku)
-#     response = client.chat.completions.create(
-#         model="gpt-4.1-mini",
-#         messages=[{"role": "user", "content": prompt}],
-#         temperature=0.0
-#     )
-#     content = response.choices[0].message.content.strip()
-#     return int(content) if content in ["0", "1"] else 0  # fallback to 0 if unclear
+# If user recorded something new, transcribe once and sync to the text box
+if audio_bytes and len(audio_bytes) != st.session_state.last_audio_len:
+    st.session_state.last_audio_len = len(audio_bytes)
+    with st.spinner("🎙️ Transcribing audio..."):
+        transcript = transcribe_audio_bytes(audio_bytes)
+    if transcript:
+        # st.success("✅ Transcribed. You can edit the text box above, or hit Generate.")
+        st.session_state.text = transcript
+        st.rerun()  # refresh to reflect transcribed text in the box instantly
 
 
-# # ---------------------- Main Streamlit App -----------------------
+# ================== ACTION ROW (right-aligned buttons only) ==================
+# Wide spacer + tight right controls; keeps results that follow in full-width.
+wrap_l, wrap_mid, wrap_r = st.columns([1, 2, 1])
+
+with wrap_mid:
+    can_generate = bool(st.session_state.text.strip())
+    b1, b2 = st.columns([1, 1])
+    with b1:
+        generate_clicked = st.button("✨ Generate", use_container_width=True, disabled=not can_generate)
+    with b2:
+        clear_clicked = st.button("🧹 Clear", use_container_width=True)
+
+if clear_clicked:
+    st.session_state.text = ""
+    st.session_state.last_audio_len = 0
+    st.rerun()
+
+st.markdown("---")
+
+# ================== RUN (full width) ==================
+if generate_clicked:
+    user_query = st.session_state.text.strip()
+    st.markdown("#### Working on it…")
+    st.write(user_query)
+    run_pipeline(user_query)
+
 
 # st.set_page_config(page_title="noon Assistant", layout="wide")
 
@@ -404,7 +479,7 @@ if st.button("Generate Search Plan & Show Products") and user_query:
 # user_query = st.text_input("💬 What do you need help with?", placeholder="e.g., Help me plan a beach picnic", key="user_query")
 
 # if st.button("Generate Search Plan & Show Products") and user_query:
-#     with st.spinner("Generating search plan using GenAI..."):
+#     with st.spinner("🤖 Generating search plan using GenAI..."):
 #         result = get_search_plan(user_query)
 #         queries = extract_queries(result)
 #         st.markdown("#### ✨ Detected Search Steps")
@@ -437,12 +512,10 @@ if st.button("Generate Search Plan & Show Products") and user_query:
 #         df = pd.concat(results, ignore_index=True)
 
 #         with st.spinner("🔍 Validating product relevance..."):
-#             df["is_relevant"] = df.apply(
-#                 lambda row: validator_llm(user_query, row["search_step"], row["Name"], row["SKU"]),
-#                 axis=1
-#             )
+#             sku_to_flag = validator_llm_batched(user_query, df)
+#             df["is_relevant"] = df["SKU"].map(sku_to_flag).fillna(0).astype(int)
 #             df = df[df["is_relevant"] == 1]
-
+#             # st.code(df)
 #         if df.empty:
 #             st.warning("No relevant products found after validation.")
 #         else:
