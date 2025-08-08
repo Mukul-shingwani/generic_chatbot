@@ -305,18 +305,54 @@ def validator_llm_batched(user_query, df):
         st.error(f"❌ Validation failed: {e}")
         return {sku: 0 for sku in df["SKU"].tolist()}
 
+## STT inclusion and final code
+try:
+    import sounddevice as sd
+    from scipy.io.wavfile import write as wav_write
+    HAS_SD = True
+except Exception:
+    HAS_SD = False
+
+try:
+    from faster_whisper import WhisperModel
+    HAS_WHISPER = True
+except Exception:
+    HAS_WHISPER = False
 
 
-# ---------------------- Main Streamlit App -----------------------
-
+# ================== PAGE SETUP ==================
 st.set_page_config(page_title="noon Assistant", layout="wide")
-
 st.title("🛍️ noon Assistant")
-st.markdown("Enter your query — whether it's a **plan**, a **buying task**, or **recipe support**, and we’ll fetch the top picks!")
+st.markdown("Type your query or speak it out. We’ll generate a plan, fetch products, and validate relevance.")
 
-user_query = st.text_input("💬 What do you need help with?", placeholder="e.g., Help me plan a beach picnic", key="user_query")
 
-if st.button("Generate Search Plan & Show Products") and user_query:
+# ================== STT CONFIG ==================
+FS = 16000          # sample rate
+DURATION = 30       # max seconds
+
+# Session state init
+for key, default in [
+    ("stage", "ready"),         # "ready" | "recording" | "transcribing"
+    ("command", ""),            # "" | "record" | "stop" | "generate"
+    ("audio_data", None),
+    ("text", ""),               # current text (typed or transcribed)
+    ("error", None),
+]:
+    if key not in st.session_state:
+        st.session_state[key] = default
+
+# Lazy-load Whisper model once
+if "whisper_model" not in st.session_state:
+    st.session_state.whisper_model = None
+    if HAS_WHISPER:
+        try:
+            st.session_state.whisper_model = WhisperModel("base", compute_type="int8")
+        except Exception as e:
+            st.warning(f"Could not load Whisper model: {e}")
+
+
+# ================== Main Pipeline ==================
+def run_pipeline(user_query: str):
     with st.spinner("🤖 Generating search plan using GenAI..."):
         result = get_search_plan(user_query)
         queries = extract_queries(result)
@@ -324,16 +360,20 @@ if st.button("Generate Search Plan & Show Products") and user_query:
         st.code(result, language="yaml")
 
     results = []
-
     with st.spinner("⏳ Hang on, getting the best recommendations for you..."):
         for i, q_step in enumerate(queries):
-            q = q_step.get("q")
-            filters = q_step.get("filters", {})
+            # Support both string-only and {q, filters} shapes
+            if isinstance(q_step, dict):
+                q = q_step.get("q")
+                filters = q_step.get("filters", {})
+            else:
+                q = str(q_step)
+                filters = {}
 
             if not q:
                 continue
 
-            if "brand" in filters:
+            if isinstance(filters, dict) and "brand" in filters and isinstance(filters["brand"], (list, tuple)):
                 for brand in filters["brand"]:
                     brand_query = f"{q}/{brand}"
                     df_item = fetch_top_products(query=brand_query)
@@ -346,22 +386,170 @@ if st.button("Generate Search Plan & Show Products") and user_query:
                     df_item["search_step"] = q
                     results.append(df_item)
 
-    if results:
-        df = pd.concat(results, ignore_index=True)
-
-        with st.spinner("🔍 Validating product relevance..."):
-            sku_to_flag = validator_llm_batched(user_query, df)
-            df["is_relevant"] = df["SKU"].map(sku_to_flag).fillna(0).astype(int)
-            df = df[df["is_relevant"] == 1]
-            # st.code(df)
-        if df.empty:
-            st.warning("No relevant products found after validation.")
-        else:
-            st.markdown("#### 🛒 Top Product Recommendations")
-            html_carousel = show_product_carousel(df)
-            st.html(html_carousel)
-    else:
+    if not results:
         st.warning("No products found. Try refining your query.")
+        return
+
+    df = pd.concat(results, ignore_index=True)
+
+    with st.spinner("🔍 Validating product relevance..."):
+        sku_to_flag = validator_llm_batched(user_query, df)
+        df["is_relevant"] = df["SKU"].map(sku_to_flag).fillna(0).astype(int)
+        df = df[df["is_relevant"] == 1]
+
+    if df.empty:
+        st.warning("No relevant products found after validation.")
+        return
+
+    st.markdown("#### 🛒 Top Product Recommendations")
+    html_carousel = show_product_carousel(df)
+    st.html(html_carousel)
+
+
+# ================== STT LOGIC HANDLER ==================
+# Handle "Record" click
+if st.session_state.command == "record" and st.session_state.stage == "ready":
+    if not HAS_SD:
+        st.session_state.error = "Microphone recording is unavailable (sounddevice not installed)."
+        st.session_state.command = ""
+    else:
+        try:
+            sd.default.samplerate = FS
+            sd.default.channels = 1
+            st.session_state.audio_data = sd.rec(int(DURATION * FS), samplerate=FS, channels=1, dtype='int16')
+            st.session_state.stage = "recording"
+            st.session_state.text = ""  # clear typed text while recording
+        except Exception as e:
+            st.session_state.error = f"Recording error: {e}"
+            st.session_state.stage = "ready"
+        st.session_state.command = ""
+        st.rerun()
+
+# Handle "Stop" click
+if st.session_state.command == "stop" and st.session_state.stage == "recording":
+    try:
+        sd.stop()
+        st.session_state.stage = "transcribing"
+    except Exception as e:
+        st.session_state.error = f"Stopping error: {e}"
+        st.session_state.stage = "ready"
+    st.session_state.command = ""
+    st.rerun()
+
+# Handle transcription
+if st.session_state.stage == "transcribing":
+    if not HAS_WHISPER or st.session_state.whisper_model is None:
+        st.session_state.error = "Transcription unavailable (faster-whisper not installed/loaded)."
+        st.session_state.text = ""
+        st.session_state.stage = "ready"
+    else:
+        with st.spinner("🎙️ Transcribing..."):
+            try:
+                audio = st.session_state.audio_data
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
+                    wav_write(tmp_file.name, FS, audio)
+                    segments, _ = st.session_state.whisper_model.transcribe(tmp_file.name)
+                os.remove(tmp_file.name)
+                transcript = " ".join([seg.text for seg in segments]).strip()
+                st.session_state.text = transcript
+            except Exception as e:
+                st.session_state.error = f"Transcription error: {e}"
+                st.session_state.text = ""
+        st.session_state.stage = "ready"
+    st.rerun()
+
+
+# ================== UI ==================
+if st.session_state.error:
+    st.error(st.session_state.error)
+    st.session_state.error = None
+
+# Recording banner + disable input while recording
+if st.session_state.stage == "recording":
+    st.markdown("""
+    <style>
+      .recording { animation: blinker 1s linear infinite; color: red; font-weight: 700; }
+      @keyframes blinker { 50% { opacity: 0; } }
+    </style>
+    """, unsafe_allow_html=True)
+    st.markdown('<p class="recording">🔴 Recording... up to 30s</p>', unsafe_allow_html=True)
+
+# Use text_input so the page reruns every keystroke
+input_disabled = (st.session_state.stage == "recording")
+user_box_val = st.text_input(
+    "💬 Your query (type or record):",
+    value=st.session_state.text,
+    key="query_box",
+    disabled=input_disabled,
+    placeholder="e.g., Help me plan a beach picnic",
+)
+
+# Keep session text in sync while ready
+if st.session_state.stage == "ready" and user_box_val != st.session_state.text:
+    st.session_state.text = user_box_val
+
+# Controls row
+c1, c2, c3, c4 = st.columns([1,1,2,1])
+
+generate_clicked = False
+record_clicked   = False
+stop_clicked     = False
+clear_clicked    = False
+
+with c1:
+    record_clicked = st.button(
+        "🎤 Record", 
+        disabled=(st.session_state.stage != "ready" or not HAS_SD),
+        use_container_width=True
+    )
+with c2:
+    stop_clicked = st.button(
+        "⏹️ Stop",
+        disabled=(st.session_state.stage != "recording"),
+        use_container_width=True
+    )
+with c4:
+    clear_clicked = st.button(
+        "🧹 Clear",
+        disabled=False,
+        use_container_width=True
+    )
+
+with c3:
+    can_generate = bool(st.session_state.text.strip()) and st.session_state.stage == "ready"
+    generate_clicked = st.button(
+        "✨ Generate",
+        disabled=not can_generate,
+        use_container_width=True
+    )
+
+if record_clicked:
+    st.session_state.command = "record"
+    st.rerun()
+
+if stop_clicked:
+    st.session_state.command = "stop"
+    st.rerun()
+
+if clear_clicked:
+    # Stop recording if active, then reset state
+    if st.session_state.stage == "recording" and HAS_SD:
+        try:
+            sd.stop()
+        except Exception:
+            pass
+    st.session_state.text = ""
+    st.session_state.audio_data = None
+    st.session_state.stage = "ready"
+    st.session_state.command = ""
+    st.rerun()
+
+# Finally, run the pipeline OUTSIDE the columns so everything uses full width
+if generate_clicked:
+    user_query = st.session_state.text.strip()
+    st.markdown("#### We are on it...")
+    st.write(user_query)
+    run_pipeline(user_query)
 
 
 # def prompt_for_validation(user_query, search_step, product_name, sku):
