@@ -4,3 +4,4 @@ pyyaml
 faster-whisper
 sounddevice
 scipy
+st-audiorec
