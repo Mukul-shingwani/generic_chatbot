@@ -10,7 +10,7 @@ from scipy.io.wavfile import write
 from faster_whisper import WhisperModel
 import tempfile
 from st_audiorec import st_audiorec
-from audiorecorder import audiorecorder
+# from audiorecorder import audiorecorder
 
 client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
