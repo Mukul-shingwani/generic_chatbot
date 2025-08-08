@@ -83,7 +83,8 @@ def build_prompt(user_query):
         - ✅ "1kg sugar" (only if user said 1kg)
         - ❌ "expandable 24-inch spinner suitcase with tsa lock", "low calorie powdered sugar"
 
-    7. If the user query is something where you cannot help or its unethical/illegal but you can help them in some good way, then feel free to do so and give relevant search steps.
+    7. If the user query is something where you cannot help or its unethical/illegal but you can help them in some good way, then feel free to do so and give relevant search steps but donot keep it very long pls
+    your introductory/caution message should be at max 15-20 words.
     
     Think like an e-commerce expert of middle east — only include things users can buy online, strictly relevant to ecommerce. Don’t mention services like booking a restaurant or sending invites.
     Be creative and conversational while forming the introductory message.
