@@ -65,6 +65,17 @@ def build_prompt(user_query):
     search_steps:
     - {{q: "item1"}} or  
     - {{q: "item2", filters: {{brand: ["xyz","abc_123", "yyy", "z_rty", "pqrs", 'xd', 'yyu', '678', 'poi', 'lkj'], max_price: "100"}}}}
+
+    6. Formatting rules for every q (apply to all intents)
+    - Keep q minimal: 1 to 4 words, core product/category only relevant to ecommerce.
+    - DO NOT add attributes (size, color, material, features, counts) unless the user explicitly asked for them.
+    - Allowed extras in q: explicit user-provided brand (e.g., “nike”), explicit user-provided quantity/size like “1kg”, “500ml”, “128gb” when user asks for it.
+    - NO parentheses, hyphens, slashes, or marketing adjectives in q.
+    - Examples
+        - ✅ "sunscreen", "beach towel", "power bank"
+        - ❌ "reef-safe sunscreen spf50 broad spectrum 200ml"
+        - ✅ "1kg sugar" (only if user said 1kg)
+        - ❌ "expandable 24-inch spinner suitcase with tsa lock"
     
     Think like an e-commerce expert of middle east — only include things users can buy online, strictly relevant to ecommerce. Don’t mention services like booking a restaurant or sending invites.
     Be creative and conversational while forming the introductory message.
