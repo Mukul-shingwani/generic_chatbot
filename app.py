@@ -26,10 +26,10 @@ def build_prompt(user_query):
         - For example, instead of "return gifts", suggest things like "mini chocolates", "puzzle kits", "coloring books" etc.
         - Suggest items that make sense for the occasion and are typically bought online.
         - Only include **one specific item per search step** and keep it a bit relevant and concise not very long.
-        - Donot apply unnecessary filters unless asked for and Accomodate the gender in search query only (if provided).
+        - Donot apply unnecessary filters unless asked for and Accomodate the gender in search query only (if provided) only in relevant steps, not meaninglessly in all.
     3. If intent is **shopping**:
     - Begin with a friendly confirmation, e.g.,  "Got it! You're looking to explore some great options for [product]. Here's a curated list of top brands you can check out:" but not just limited to this.
-    - Keep the search step relevant and concise, focussing on the main category, not long or too specific. Accomodate the gender in search query only (if provided).
+    - Keep the search step relevant and concise, focussing on the main category, not long or too specific. Accomodate the gender in search query only (if provided) only in relevant steps, not meaninglessly in all.
     - Extract product/category name and optional filters like brand
     - If user uses vague brand indicators like:
         - "top brands", "luxury brands", "high-end" - Replace with **real premium brands actually found on Noon**.
