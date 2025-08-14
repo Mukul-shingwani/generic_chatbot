@@ -220,7 +220,8 @@ def fetch_top_products(query, country_code="AE", limit=3, sort_by="popularity", 
         "limit": limit,
         "page": 1,
         "sort[by]": sort_by,
-        "sort[dir]": sort_dir
+        "sort[dir]": sort_dir,
+        "x-se" : "google"
     }
 
     headers = {
