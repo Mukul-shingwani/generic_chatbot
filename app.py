@@ -221,7 +221,9 @@ def fetch_top_products(query, country_code="AE", limit=3, sort_by="popularity", 
         "page": 1,
         "sort[by]": sort_by,
         "sort[dir]": sort_dir,
-        "x-se" : "google"
+        # "x-se" : "google"
+        "av" : 0,
+        "e[search-ae]" : "google"
     }
 
     headers = {
@@ -298,13 +300,14 @@ def fetch_top_products(query, country_code="AE", limit=3, sort_by="popularity", 
 def build_batched_validation_prompt(user_query, df):
     header = (
         "You validate product relevance for noon.com. basis the user query and help take a decision to recommend the relevant products.\n"
-        f'User Query: "{user_query}"\n\n'
         "You need to Decide accurately if each product matches the Search Step and is relevant to the User Query. Treat the search step as a sub step in fulfilling the original user query to get more context.\n"
-        "- Mark 1 if it's the same item/category or a very close match that makes sense to be shown to the user as per their query.\n"
-        "- Mark 0 if it's a different category, off-topic, or a combo that changes the core ingredient or essence (e.g., 'tomato & mascarpone' ≠ 'mascarpone cheese'). But donot be over harsh here, if the product is still somewhat related, given it will not be highly illogical to suggest to user, consider giving it a 1.\n"
+        "You will be provided with the product name for you to analyze.\n"
+        "- Mark 1 if the it's the same item/category or a close match that makes sense to be shown to the user as per their query.\n"
+        "- Mark 0 if it's a different category, off-topic, or a combo that changes the core ingredient or essence (e.g., 'tomato & mascarpone' ≠ 'mascarpone cheese'). But donot be over harsh here, if the product is still somewhat related, given it will not be highly illogical to suggest to user, give it a 1 in this case.\n"
         "- Focus more on the main user query, if the product is relevant to the main user query and not highly irrelevant to the search step, then mark it as 1.\n"
         "- Be a little stricter for cooking/ingredient-like steps (spices, oil, ghee, cocoa, etc.).\n"
         "- Consider yourself to be the user, and think if you would be happy to see this product in the results for the things you asked.\n\n"
+        f'User Query: "{user_query}"\n\n'
         "Output format (IMPORTANT): return ONLY one line per product in the SAME ORDER as given:\n"
         "<SKU> : 0 or 1\n"
         "No extra text.\n\n"
