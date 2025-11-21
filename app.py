@@ -439,6 +439,8 @@ def run_pipeline(user_query: str):
         st.warning("I couldn’t extract valid search steps from the model’s reply. I’ll try your original query directly.")
         queries = [{"q": user_query, "filters": {}}]
 
+    st.text(queries)
+
     # 3) Fetch products
     results = []
     with st.spinner("⏳ Hang on, getting the best recommendations for you..."):
