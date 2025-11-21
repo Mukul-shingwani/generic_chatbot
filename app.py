@@ -444,6 +444,7 @@ def run_pipeline(user_query: str):
     with st.spinner("⏳ Hang on, getting the best recommendations for you..."):
         try:
             for q_step in queries:
+                st.text(q_step)
                 # supports dict {q, filters} or plain string
                 if isinstance(q_step, dict):
                     q = q_step.get("q")
@@ -462,6 +463,7 @@ def run_pipeline(user_query: str):
                             results.append(df_item)
                 else:
                     df_item = fetch_top_products(query=q)
+                    st.text(df_item)
                     if not df_item.empty:
                         df_item["search_step"] = q
                         results.append(df_item)
@@ -478,7 +480,7 @@ def run_pipeline(user_query: str):
     # 4) Validate relevance (but don’t crash if validator fails)
     import pandas as pd
     df = pd.concat(results, ignore_index=True)
-
+    st.text("df ready for validation")
     with st.spinner("🔍 Validating product relevance..."):
         try:
             sku_to_flag = validator_llm_batched(user_query, df)  # expected {sku: 0/1}
